@@ -128,7 +128,7 @@ namespace SaveAnywhere.Framework {
                 map1 = player.currentLocation.Name;
             var tile1 = player.getTileLocationPoint();
             int facingDirection1 = player.facingDirection;
-            yield return new CharacterData(CharacterType.Player, name1, map1, tile1, facingDirection1);
+            yield return new CharacterData(CharacterType.Player, name1, map1, tile1.X, tile1.Y, facingDirection1);
             player = null;
             name1 = null;
             map1 = null;
@@ -141,7 +141,7 @@ namespace SaveAnywhere.Framework {
                     var map2 = npc.currentLocation.Name;
                     var tile2 = npc.getTileLocationPoint();
                     int facingDirection2 = npc.facingDirection;
-                    yield return new CharacterData(type.Value, name2, map2, tile2, facingDirection2);
+                    yield return new CharacterData(type.Value, name2, map2, tile2.X, tile2.Y, facingDirection2);
                     type = new CharacterType?();
                     name2 = null;
                     map2 = null;
