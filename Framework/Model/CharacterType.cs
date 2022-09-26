@@ -1,5 +1,5 @@
 ﻿namespace SaveAnywhere.Framework.Model {
-    internal enum CharacterType { 
+    public enum CharacterType { 
         Player,
         Horse,
         Pet,

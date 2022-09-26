@@ -152,16 +152,19 @@ namespace SaveAnywhere.Framework {
         }
 
         private void SetPositions(CharacterData[] positions) {
-            var characterData1 = positions.FirstOrDefault((Func<CharacterData, bool>) (p =>
-                p.Type == CharacterType.Player && p.Name.Equals(Game1.player.Name)));
-            if (characterData1 != null) {
+            foreach (var playerCharacterData in positions) {
+                if (playerCharacterData.Type != CharacterType.Player ||
+                    !playerCharacterData.Name.Equals(Game1.player.Name)) continue;
+                
                 Game1.player.previousLocationName = Game1.player.currentLocation.Name;
-                Game1.xLocationAfterWarp = characterData1.X;
-                Game1.yLocationAfterWarp = characterData1.Y;
-                Game1.facingDirectionAfterWarp = characterData1.FacingDirection;
+                Game1.xLocationAfterWarp = playerCharacterData.X;
+                Game1.yLocationAfterWarp = playerCharacterData.Y;
+                Game1.facingDirectionAfterWarp = playerCharacterData.FacingDirection;
                 Game1.fadeScreenToBlack();
-                Game1.warpFarmer(characterData1.Map, characterData1.X, characterData1.Y, false);
-                Game1.player.faceDirection(characterData1.FacingDirection);
+                Game1.warpFarmer(playerCharacterData.Map, playerCharacterData.X, playerCharacterData.Y, false);
+                Game1.player.faceDirection(playerCharacterData.FacingDirection);
+                
+                break;
             }
 
             foreach (var allCharacter in Utility.getAllCharacters()) {

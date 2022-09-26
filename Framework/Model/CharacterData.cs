@@ -1,5 +1,5 @@
 ﻿namespace SaveAnywhere.Framework.Model {
-    internal sealed record CharacterData(
+    public sealed record CharacterData(
         CharacterType Type,
         string Name,
         string Map,
