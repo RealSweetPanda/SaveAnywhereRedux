@@ -45,7 +45,9 @@ namespace SaveAnywhere {
 
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e) {
             ShouldResetSchedules = false;
+            Game1.dayOfMonth = Game1.dayOfMonth - 1;
             SaveManager.LoadData();
+
         }
 
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e) {
@@ -105,7 +107,6 @@ namespace SaveAnywhere {
             else if (firstLoad) {
                 SaveManager.ClearData();
             }
-
             ShouldResetSchedules = true;
         }
 
@@ -119,6 +120,9 @@ namespace SaveAnywhere {
                 else {
                     IsCustomSaving = true;
                     SaveManager.BeginSaveData();
+                    Game1.dayOfMonth = Game1.dayOfMonth + 1;
+                    Game1.currentLoader = SaveGame.Save();
+                    Game1.dayOfMonth = Game1.dayOfMonth - 1;
                 }
             }
             else {

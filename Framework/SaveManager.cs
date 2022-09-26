@@ -80,11 +80,11 @@ namespace SaveAnywhere.Framework {
                 farm.lastItemShipped = null;
                 WaitingToSave = true;
             }
-            else {
-                currentSaveMenu = new NewSaveGameMenuV2();
-                currentSaveMenu.SaveComplete += CurrentSaveMenu_SaveComplete;
-                Game1.activeClickableMenu = currentSaveMenu;
-            }
+            // else {
+            //     currentSaveMenu = new NewSaveGameMenuV2();
+            //     currentSaveMenu.SaveComplete += CurrentSaveMenu_SaveComplete;
+            //     Game1.activeClickableMenu = currentSaveMenu;
+            // }
 
             Helper.Data.WriteJsonFile(RelativeDataPath, new PlayerData {
                 Time = Game1.timeOfDay,
