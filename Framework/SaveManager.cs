@@ -80,11 +80,11 @@ namespace SaveAnywhere.Framework {
                 farm.lastItemShipped = null;
                 WaitingToSave = true;
             }
-            // else {
-            //     currentSaveMenu = new NewSaveGameMenuV2();
-            //     currentSaveMenu.SaveComplete += CurrentSaveMenu_SaveComplete;
-            //     Game1.activeClickableMenu = currentSaveMenu;
-            // }
+            else {
+                currentSaveMenu = new NewSaveGameMenuV2();
+                currentSaveMenu.SaveComplete += CurrentSaveMenu_SaveComplete;
+                Game1.activeClickableMenu = currentSaveMenu;
+            }
 
             Helper.Data.WriteJsonFile(RelativeDataPath, new PlayerData {
                 Time = Game1.timeOfDay,
@@ -100,6 +100,7 @@ namespace SaveAnywhere.Framework {
                 return;
             Game1.timeOfDay = data.Time;
             ResumeSwimming(data);
+            Game1.dayOfMonth = Game1.dayOfMonth - 1;
             SetPositions(data.Characters);
             var onLoaded = OnLoaded;
             if (onLoaded != null)

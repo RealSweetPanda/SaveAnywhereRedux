@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
@@ -151,14 +152,14 @@ namespace SaveAnywhere.Framework {
             currentTab = Utility.Clamp(currentTab, 0, (categoryItems[currentPage].Count - 1) / itemsPerCategoryPage);
         }
 
-        protected virtual void customSnapBehavior(int direction, int oldRegion, int oldID) {
+        protected override void customSnapBehavior(int direction, int oldRegion, int oldID) {
             if (oldID != 103 || direction != 1 || !showForwardButton())
                 return;
             currentlySnappedComponent = getComponentWithID(102);
             snapCursorToCurrentSnappedComponent();
         }
 
-        public virtual void snapToDefaultClickableComponent() {
+        public override void snapToDefaultClickableComponent() {
             if (currentPage != -1)
                 currentlySnappedComponent = getComponentWithID(103);
             else
@@ -256,7 +257,7 @@ namespace SaveAnywhere.Framework {
             }
         }
 
-        public virtual void update(GameTime time) {
+        public override void update(GameTime time) {
             base.update(time);
             if (_hasFinished) {
                 shipItems();
@@ -451,13 +452,13 @@ namespace SaveAnywhere.Framework {
             }
         }
 
-        public virtual void applyMovementKey(int direction) {
+        public override void applyMovementKey(int direction) {
             if (!CanReceiveInput())
                 return;
             base.applyMovementKey(direction);
         }
 
-        public virtual void performHoverAction(int x, int y) {
+        public override void performHoverAction(int x, int y) {
             if (!CanReceiveInput())
                 return;
             base.performHoverAction(x, y);
@@ -476,7 +477,7 @@ namespace SaveAnywhere.Framework {
             return introTimer <= 0 && !outro;
         }
 
-        public virtual void receiveKeyPress(Keys key) {
+        public override void receiveKeyPress(Keys key) {
             if (!CanReceiveInput())
                 return;
             if (introTimer <= 0 && !Game1.options.gamepadControls && (key.Equals((Keys) 27) ||
@@ -492,7 +493,7 @@ namespace SaveAnywhere.Framework {
             }
         }
 
-        public virtual void receiveGamePadButton(Buttons b) {
+        public override void receiveGamePadButton(Buttons b) {
             if (!CanReceiveInput())
                 return;
             base.receiveGamePadButton(b);
@@ -528,7 +529,7 @@ namespace SaveAnywhere.Framework {
             Game1.changeMusicTrack("none");
         }
 
-        public virtual void receiveLeftClick(int x, int y, bool playSound = true) {
+        public override void receiveLeftClick(int x, int y, bool playSound = true) {
             if (!CanReceiveInput())
                 return;
             if (outro && !savedYet) {
@@ -593,18 +594,20 @@ namespace SaveAnywhere.Framework {
             }
         }
 
-        public virtual void receiveRightClick(int x, int y, bool playSound = true) { }
+        public override void receiveRightClick(int x, int y, bool playSound = true) { }
 
         public bool showForwardButton() {
             return categoryItems[currentPage].Count > itemsPerCategoryPage * (currentTab + 1);
         }
 
-        public virtual void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds) {
+        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds) {
             initialize(0, 0, Game1.viewport.Width, Game1.viewport.Height);
             RepositionItems();
         }
 
-        public virtual void draw(SpriteBatch b) {
+        public override void draw(SpriteBatch b)
+        {
+            SaveAnywhere.ModMonitor.Log("Test",LogLevel.Debug);
             if (Game1.wasRainingYesterday) {
                 b.Draw(Game1.mouseCursors, new Rectangle(0, 0, Game1.viewport.Width, Game1.viewport.Height),
                     new Rectangle(639, 858, 1, 184),
