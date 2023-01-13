@@ -11,7 +11,7 @@ Download this mod and unzip it into Stardew Valley/Mods.
 Run the game using SMAPI.
 
 ### How To Use
-Press K to save anywhere. Edit the config.json file in a text editor to change the key (it will appear after you run the game once).
+Press K to save anywhere. Edit the `config.json` file in a text editor to change the key (it will appear after you run the game once).
 
 #### Created by Omegasis, Aredjay, CMiSSioN and Sweet Panda
 
