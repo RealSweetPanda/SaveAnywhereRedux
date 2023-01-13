@@ -36,9 +36,10 @@ namespace SaveAnywhere.Framework {
 
         public event EventHandler SaveComplete;
 
-        public virtual void receiveRightClick(int x, int y, bool playSound = true) { }
+        public override void receiveRightClick(int x, int y, bool playSound = true) { }
 
         public void complete() {
+            Game1.dayOfMonth = Game1.dayOfMonth - 1;
             Game1.playSound("money");
             completePause = 1500;
             loader = null;
@@ -49,11 +50,11 @@ namespace SaveAnywhere.Framework {
             SaveComplete(this, EventArgs.Empty);
         }
 
-        public virtual bool readyToClose() {
+        public override bool readyToClose() {
             return false;
         }
 
-        public virtual void update(GameTime time) {
+        public override void update(GameTime time) {
             if (quit) {
                 if (!Game1.activeClickableMenu.Equals(this) || !Game1.PollForEndOfNewDaySync())
                     return;
@@ -92,13 +93,17 @@ namespace SaveAnywhere.Framework {
                                     if (Game1.newDaySync.readyForSave()) {
                                         multiplayer.saveFarmhands();
                                         Game1.game1.IsSaving = true;
+                                        Game1.dayOfMonth = Game1.dayOfMonth + 2;
                                         loader = SaveGame.Save();
+                                        
                                     }
                                 }
                                 else {
                                     multiplayer.saveFarmhands();
                                     Game1.game1.IsSaving = true;
+                                    Game1.dayOfMonth = Game1.dayOfMonth + 2;
                                     loader = SaveGame.Save();
+                                    Game1.dayOfMonth = Game1.dayOfMonth - 1;
                                 }
                             }
                             else {
@@ -154,7 +159,7 @@ namespace SaveAnywhere.Framework {
             startupPreferences.savePreferences(false);
         }
 
-        public virtual void draw(SpriteBatch b) {
+        public override void draw(SpriteBatch b) {
             base.draw(b);
             var vector2 = Utility.makeSafe(new Vector2(64f, Game1.viewport.Height - 64), new Vector2(64f, 64f));
             var flag = false;

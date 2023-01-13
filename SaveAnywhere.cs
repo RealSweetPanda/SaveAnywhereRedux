@@ -105,7 +105,6 @@ namespace SaveAnywhere {
             else if (firstLoad) {
                 SaveManager.ClearData();
             }
-
             ShouldResetSchedules = true;
         }
 
@@ -119,6 +118,7 @@ namespace SaveAnywhere {
                 else {
                     IsCustomSaving = true;
                     SaveManager.BeginSaveData();
+
                 }
             }
             else {

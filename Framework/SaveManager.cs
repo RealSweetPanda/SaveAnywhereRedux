@@ -100,6 +100,7 @@ namespace SaveAnywhere.Framework {
                 return;
             Game1.timeOfDay = data.Time;
             ResumeSwimming(data);
+            Game1.dayOfMonth = Game1.dayOfMonth - 1;
             SetPositions(data.Characters);
             var onLoaded = OnLoaded;
             if (onLoaded != null)
