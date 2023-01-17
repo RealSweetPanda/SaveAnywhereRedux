@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using HarmonyLib;
 using Microsoft.Xna.Framework;
 using SaveAnywhere.Framework.Model;
 using StardewModdingAPI;
@@ -17,7 +18,6 @@ namespace SaveAnywhere.Framework {
         public Dictionary<string, Action> afterCustomSavingCompleted;
         public Dictionary<string, Action> afterSaveLoaded;
         public Dictionary<string, Action> beforeCustomSavingBegins;
-        private NewSaveGameMenuV2 currentSaveMenu;
         private bool WaitingToSave;
 
         public SaveManager(IModHelper helper, IReflectionHelper reflection, Action onLoaded) {
@@ -42,15 +42,10 @@ namespace SaveAnywhere.Framework {
         public void Update() {
             if (!WaitingToSave || Game1.activeClickableMenu != null)
                 return;
-            currentSaveMenu = new NewSaveGameMenuV2();
-            currentSaveMenu.SaveComplete += CurrentSaveMenu_SaveComplete;
-            Game1.activeClickableMenu = currentSaveMenu;
             WaitingToSave = false;
         }
 
         private void CurrentSaveMenu_SaveComplete(object sender, EventArgs e) {
-            currentSaveMenu.SaveComplete -= CurrentSaveMenu_SaveComplete;
-            currentSaveMenu = null;
             SaveAnywhere.RestoreMonsters();
             if (afterSave != null)
                 afterSave(this, EventArgs.Empty);
@@ -69,6 +64,7 @@ namespace SaveAnywhere.Framework {
         }
 
         public void BeginSaveData() {
+            
             if (beforeSave != null)
                 beforeSave(this, EventArgs.Empty);
             foreach (var customSavingBegin in beforeCustomSavingBegins)
@@ -79,11 +75,6 @@ namespace SaveAnywhere.Framework {
                 Game1.activeClickableMenu = new NewShippingMenuV2(farm.getShippingBin(Game1.player));
                 farm.lastItemShipped = null;
                 WaitingToSave = true;
-            }
-            else {
-                currentSaveMenu = new NewSaveGameMenuV2();
-                currentSaveMenu.SaveComplete += CurrentSaveMenu_SaveComplete;
-                Game1.activeClickableMenu = currentSaveMenu;
             }
 
             Helper.Data.WriteJsonFile(RelativeDataPath, new PlayerData {
@@ -100,7 +91,6 @@ namespace SaveAnywhere.Framework {
                 return;
             Game1.timeOfDay = data.Time;
             ResumeSwimming(data);
-            Game1.dayOfMonth = Game1.dayOfMonth - 1;
             SetPositions(data.Characters);
             var onLoaded = OnLoaded;
             if (onLoaded != null)
@@ -142,6 +132,7 @@ namespace SaveAnywhere.Framework {
                     var map2 = npc.currentLocation.Name;
                     var tile2 = npc.getTileLocationPoint();
                     int facingDirection2 = npc.facingDirection;
+                    yield return new CharacterData(type.Value, name2, map2, tile2.X, tile2.Y, facingDirection2);
                     yield return new CharacterData(type.Value, name2, map2, tile2.X, tile2.Y, facingDirection2);
                     type = new CharacterType?();
                     name2 = null;

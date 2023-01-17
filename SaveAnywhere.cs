@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using HarmonyLib;
 using SaveAnywhere.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -22,6 +23,8 @@ namespace SaveAnywhere {
         private bool ShouldResetSchedules;
 
         public override void Entry(IModHelper helper) {
+            var harmony = new Harmony("SaveAnywhere");
+            harmony.PatchAll();
             Config = helper.ReadConfig<ModConfig>();
             SaveManager = new SaveManager(Helper, Helper.Reflection, () => ShouldResetSchedules = true);
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
@@ -53,20 +56,6 @@ namespace SaveAnywhere {
                 if (!Game1.player.IsMainPlayer)
                     return;
                 SaveManager.Update();
-            }
-
-            if (Game1.activeClickableMenu == null && Context.IsWorldReady)
-                IsCustomSaving = false;
-            if (Game1.activeClickableMenu == null && !customMenuOpen)
-                return;
-            if (Game1.activeClickableMenu == null && customMenuOpen) {
-                customMenuOpen = false;
-            }
-            else {
-                if (Game1.activeClickableMenu == null ||
-                    !(Game1.activeClickableMenu.GetType() == typeof(NewSaveGameMenuV2)))
-                    return;
-                customMenuOpen = true;
             }
         }
 
