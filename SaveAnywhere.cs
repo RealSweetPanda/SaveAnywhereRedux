@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using HarmonyLib;
 using SaveAnywhere.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -23,8 +22,6 @@ namespace SaveAnywhere {
         private bool ShouldResetSchedules;
 
         public override void Entry(IModHelper helper) {
-            var harmony = new Harmony("SaveAnywhere");
-            harmony.PatchAll();
             Config = helper.ReadConfig<ModConfig>();
             SaveManager = new SaveManager(Helper, Helper.Reflection, () => ShouldResetSchedules = true);
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
