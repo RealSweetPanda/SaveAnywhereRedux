@@ -132,7 +132,6 @@ namespace SaveAnywhere.Framework {
                     var tile2 = npc.getTileLocationPoint();
                     int facingDirection2 = npc.facingDirection;
                     yield return new CharacterData(type.Value, name2, map2, tile2.X, tile2.Y, facingDirection2);
-                    yield return new CharacterData(type.Value, name2, map2, tile2.X, tile2.Y, facingDirection2);
                     type = new CharacterType?();
                     name2 = null;
                     map2 = null;
