@@ -527,6 +527,7 @@ namespace SaveAnywhere.Framework {
             outroFadeTimer = 800;
             Game1.playSound("bigDeSelect");
             Game1.changeMusicTrack("none");
+            Game1.currentLoader = SaveGame.Save();
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true) {
@@ -607,7 +608,6 @@ namespace SaveAnywhere.Framework {
 
         public override void draw(SpriteBatch b)
         {
-            SaveAnywhere.ModMonitor.Log("Test",LogLevel.Debug);
             if (Game1.wasRainingYesterday) {
                 b.Draw(Game1.mouseCursors, new Rectangle(0, 0, Game1.viewport.Width, Game1.viewport.Height),
                     new Rectangle(639, 858, 1, 184),

@@ -54,20 +54,6 @@ namespace SaveAnywhere {
                     return;
                 SaveManager.Update();
             }
-
-            if (Game1.activeClickableMenu == null && Context.IsWorldReady)
-                IsCustomSaving = false;
-            if (Game1.activeClickableMenu == null && !customMenuOpen)
-                return;
-            if (Game1.activeClickableMenu == null && customMenuOpen) {
-                customMenuOpen = false;
-            }
-            else {
-                if (Game1.activeClickableMenu == null ||
-                    !(Game1.activeClickableMenu.GetType() == typeof(NewSaveGameMenuV2)))
-                    return;
-                customMenuOpen = true;
-            }
         }
 
         public void cleanMonsters() {
