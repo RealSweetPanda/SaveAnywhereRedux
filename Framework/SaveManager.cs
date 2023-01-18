@@ -76,8 +76,34 @@ namespace SaveAnywhere.Framework {
                 WaitingToSave = true;
             }
 
+            var drink = Game1.buffsDisplay.drink;
+            BuffData drinkdata = null;
+
+            if (drink != null)
+            {
+                drinkdata = new BuffData(
+                    drink.displaySource,
+                    drink.source,
+                    drink.millisecondsDuration,
+                    drink.buffAttributes
+                );
+            }
+            var food = Game1.buffsDisplay.food;
+            BuffData fooddata = null;
+            if (food != null)
+            {
+                fooddata = new BuffData(
+                    food.displaySource,
+                    food.source,
+                    food.millisecondsDuration,
+                    food.buffAttributes
+                );
+            }
             Helper.Data.WriteJsonFile(RelativeDataPath, new PlayerData {
                 Time = Game1.timeOfDay,
+                otherBuffs = GetotherBuffs().ToArray(),
+                drinkBuff = drinkdata,
+                foodBuff = fooddata,
                 Characters = GetPositions().ToArray(),
                 IsCharacterSwimming = Game1.player.swimming.Value
             });
@@ -89,6 +115,69 @@ namespace SaveAnywhere.Framework {
             if (data == null)
                 return;
             Game1.timeOfDay = data.Time;
+            if (data.otherBuffs != null)
+            {
+                foreach (var buff in data.otherBuffs)
+                {
+                    var atts = buff.Attributes;
+                    Game1.buffsDisplay.addOtherBuff(new Buff(atts[0],
+                        atts[1],
+                        atts[2],
+                        atts[3],
+                        atts[4],
+                        atts[5],
+                        atts[6],
+                        atts[7],
+                        atts[8],
+                        atts[9],
+                        atts[10],
+                        atts[11],
+                        buff.MillisecondsDuration * 10 / 7000,
+                        buff.Source,
+                        buff.DisplaySource));
+                }
+            }
+            var datadrink = data.drinkBuff;
+            var datafood = data.foodBuff;
+            
+            if (datadrink != null)
+            {
+                var atts = datadrink.Attributes;
+                Game1.buffsDisplay.tryToAddDrinkBuff(new Buff(atts[0],
+                    atts[1],
+                    atts[2],
+                    atts[3],
+                    atts[4],
+                    atts[5],
+                    atts[6],
+                    atts[7],
+                    atts[8],
+                    atts[9],
+                    atts[10],
+                    atts[11],
+                    datadrink.MillisecondsDuration * 10 / 7000,
+                    datadrink.Source,
+                    datadrink.DisplaySource));
+            }
+            if (datafood != null)
+            {
+                var atts = datafood.Attributes;
+                Game1.buffsDisplay.tryToAddFoodBuff(new Buff(atts[0],
+                    atts[1],
+                    atts[2],
+                    atts[3],
+                    atts[4],
+                    atts[5],
+                    atts[6],
+                    atts[7],
+                    atts[8],
+                    atts[9],
+                    atts[10],
+                    atts[11],
+                    datafood.MillisecondsDuration * 10 / 7000,
+                    datafood.Source,
+                    datafood.DisplaySource),datafood.MillisecondsDuration);
+            }
             ResumeSwimming(data);
             SetPositions(data.Characters);
             var onLoaded = OnLoaded;
@@ -109,7 +198,16 @@ namespace SaveAnywhere.Framework {
             }
             catch { }
         }
-
+        private IEnumerable<BuffData> GetotherBuffs() {
+            foreach (var buff in Game1.buffsDisplay.otherBuffs) {
+                yield return new BuffData(
+                    buff.displaySource,
+                    buff.source, 
+                    buff.millisecondsDuration,
+                    buff.buffAttributes
+                    );
+            }
+        }
         private IEnumerable<CharacterData> GetPositions() {
             var player = Game1.player;
             var name1 = player.Name;
