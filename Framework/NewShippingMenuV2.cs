@@ -530,7 +530,6 @@ namespace SaveAnywhere.Framework {
             outroFadeTimer = 800;
             Game1.playSound("bigDeSelect");
             Game1.changeMusicTrack("none");
-            Game1.currentLoader = SaveGame.Save();
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true) {
