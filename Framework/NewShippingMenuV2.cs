@@ -56,6 +56,8 @@ namespace SaveAnywhere.Framework {
         private int timesPokedMoon;
         private readonly int totalWidth;
         private float weatherX;
+        
+
 
         public NewShippingMenuV2(IList<Item> items) : base(0, 0, Game1.viewport.Width, Game1.viewport.Height) {
             Game1.player.team.endOfNightStatus.UpdateState("shipment");
@@ -70,6 +72,7 @@ namespace SaveAnywhere.Framework {
             centerX = Game1.viewport.Width / 2;
             centerY = Game1.viewport.Height / 2;
             _hasFinished = false;
+            outro = true;
             var num = -1;
             for (var index = 0; index < 6; ++index) {
                 var categories = this.categories;
@@ -527,6 +530,7 @@ namespace SaveAnywhere.Framework {
             outroFadeTimer = 800;
             Game1.playSound("bigDeSelect");
             Game1.changeMusicTrack("none");
+            Game1.currentLoader = SaveGame.Save();
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true) {
@@ -607,7 +611,6 @@ namespace SaveAnywhere.Framework {
 
         public override void draw(SpriteBatch b)
         {
-            SaveAnywhere.ModMonitor.Log("Test",LogLevel.Debug);
             if (Game1.wasRainingYesterday) {
                 b.Draw(Game1.mouseCursors, new Rectangle(0, 0, Game1.viewport.Width, Game1.viewport.Height),
                     new Rectangle(639, 858, 1, 184),

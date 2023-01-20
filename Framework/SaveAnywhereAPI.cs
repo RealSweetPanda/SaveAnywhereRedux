@@ -2,6 +2,7 @@
 
 namespace SaveAnywhere.Framework {
     public class SaveAnywhereAPI {
+        
         public event EventHandler BeforeSave {
             add => SaveAnywhere.Instance.SaveManager.beforeSave += value;
             remove => SaveAnywhere.Instance.SaveManager.beforeSave -= value;

@@ -6,80 +6,94 @@ using StardewValley;
 namespace SaveAnywhere.Framework {
     public static class NPCExtensions {
         public static void fillInSchedule(this NPC npc) {
-            if (npc.Schedule == null)
-                return;
-            var rawSchedule = GetRawSchedule(npc.Name);
-            if (rawSchedule == null)
-                return;
-            var scheduleKey = GetScheduleKey(npc);
-            string str;
-            rawSchedule.TryGetValue(scheduleKey, out str);
-            if (string.IsNullOrEmpty(str))
-                return;
-            var strArray1 = str.Split('/');
-            var source = new SortedDictionary<int, SchedulePathInfo>();
-            for (var index = 0; index < strArray1.Length; ++index) {
-                var strArray2 = strArray1[index].Split(' ');
-                if (strArray2[0].Equals("GOTO")) {
-                    rawSchedule.TryGetValue(strArray2[1], out str);
-                    strArray1 = str.Split('/');
-                    index = -1;
+            try
+            {
+                if (npc.Schedule == null)
+                    return;
+                var rawSchedule = GetRawSchedule(npc.Name);
+                if (rawSchedule == null)
+                    return;
+                var scheduleKey = GetScheduleKey(npc);
+                string str;
+                rawSchedule.TryGetValue(scheduleKey, out str);
+                if (string.IsNullOrEmpty(str))
+                    return;
+                var strArray1 = str.Split('/');
+                var source = new SortedDictionary<int, SchedulePathInfo>();
+                for (var index = 0; index < strArray1.Length; ++index)
+                {
+                    var strArray2 = strArray1[index].Split(' ');
+                    if (strArray2[0].Equals("GOTO"))
+                    {
+                        rawSchedule.TryGetValue(strArray2[1], out str);
+                        strArray1 = str.Split('/');
+                        continue;
+                    }
+
+                    var schedulePathInfo = new SchedulePathInfo(strArray1[index]);
+                    if (schedulePathInfo.timeToGoTo != 0)
+                        source.Add(schedulePathInfo.timeToGoTo, schedulePathInfo);
                 }
 
-                var schedulePathInfo = new SchedulePathInfo(strArray1[index]);
-                if (schedulePathInfo.timeToGoTo != 0)
-                    source.Add(schedulePathInfo.timeToGoTo, schedulePathInfo);
-            }
-
-            var index1 = 0;
-            var list = source.ToList();
-            list.OrderBy((Func<KeyValuePair<int, SchedulePathInfo>, int>) (i => i.Key));
-            KeyValuePair<int, SchedulePathInfo> keyValuePair;
-            for (var key1 = 600; key1 <= 2600; key1 += 10)
-                if (index1 >= list.Count && !source.ContainsKey(key1)) {
-                    var sortedDictionary = source;
-                    var key2 = key1;
-                    keyValuePair = list[list.Count - 1];
-                    var schedulePathInfo = keyValuePair.Value;
-                    sortedDictionary.Add(key2, schedulePathInfo);
-                }
-                else if (index1 == list.Count - 1) {
-                    if (!source.ContainsKey(key1)) {
+                var index1 = 0;
+                var list = source.ToList();
+                list.OrderBy((Func<KeyValuePair<int, SchedulePathInfo>, int>)(i => i.Key));
+                KeyValuePair<int, SchedulePathInfo> keyValuePair;
+                for (var key1 = 600; key1 <= 2600; key1 += 10)
+                    if (index1 >= list.Count && !source.ContainsKey(key1))
+                    {
                         var sortedDictionary = source;
-                        var key3 = key1;
-                        keyValuePair = list[index1];
+                        var key2 = key1;
+                        // fix ArgumentOutOfRangeException that happens below
+                        if (list.Count != 0) keyValuePair = list[list.Count - 1];
+                        else keyValuePair = new KeyValuePair<int, SchedulePathInfo>();
                         var schedulePathInfo = keyValuePair.Value;
-                        sortedDictionary.Add(key3, schedulePathInfo);
+                        sortedDictionary.Add(key2, schedulePathInfo);
                     }
-                }
-                else {
-                    var num = key1;
-                    keyValuePair = list[index1 + 1];
-                    var key4 = keyValuePair.Key;
-                    if (num == key4) {
-                        ++index1;
+                    else if (index1 == list.Count - 1)
+                    {
+                        if (!source.ContainsKey(key1))
+                        {
+                            var sortedDictionary = source;
+                            var key3 = key1;
+                            keyValuePair = list[index1];
+                            var schedulePathInfo = keyValuePair.Value;
+                            sortedDictionary.Add(key3, schedulePathInfo);
+                        }
                     }
-                    else if (!source.ContainsKey(key1)) {
-                        var sortedDictionary = source;
-                        var key5 = key1;
-                        keyValuePair = list[index1];
-                        var schedulePathInfo = keyValuePair.Value;
-                        sortedDictionary.Add(key5, schedulePathInfo);
+                    else
+                    {
+                        var num = key1;
+                        keyValuePair = list[index1 + 1];
+                        var key4 = keyValuePair.Key;
+                        if (num == key4)
+                        {
+                            ++index1;
+                        }
+                        else if (!source.ContainsKey(key1))
+                        {
+                            var sortedDictionary = source;
+                            var key5 = key1;
+                            keyValuePair = list[index1];
+                            var schedulePathInfo = keyValuePair.Value;
+                            sortedDictionary.Add(key5, schedulePathInfo);
+                        }
                     }
-                }
 
-            var schedulePathInfo1 = source[Game1.timeOfDay];
-            var schedulePathDescription = SaveAnywhere.ModHelper.Reflection
-                .GetMethod(npc, "pathfindToNextScheduleLocation").Invoke<SchedulePathDescription>(
-                    npc.currentLocation.Name, npc.getTileX(), npc.getTileY(), schedulePathInfo1.endMap,
-                    schedulePathInfo1.endX, schedulePathInfo1.endY, schedulePathInfo1.endDirection,
-                    schedulePathInfo1.endBehavior, schedulePathInfo1.endMessage);
-            npc.DirectionsToNewLocation = schedulePathDescription;
-            npc.controller = new PathFindController(npc.DirectionsToNewLocation.route, npc,
-                Utility.getGameLocationOfCharacter(npc)) {
-                finalFacingDirection = npc.DirectionsToNewLocation.facingDirection,
-                endBehaviorFunction = null
-            };
+                var schedulePathInfo1 = source[Game1.timeOfDay];
+                var schedulePathDescription = SaveAnywhere.ModHelper.Reflection
+                    .GetMethod(npc, "pathfindToNextScheduleLocation").Invoke<SchedulePathDescription>(
+                        npc.currentLocation.Name, npc.getTileX(), npc.getTileY(), schedulePathInfo1.endMap,
+                        schedulePathInfo1.endX, schedulePathInfo1.endY, schedulePathInfo1.endDirection,
+                        schedulePathInfo1.endBehavior, schedulePathInfo1.endMessage);
+                npc.DirectionsToNewLocation = schedulePathDescription;
+                npc.controller = new PathFindController(npc.DirectionsToNewLocation.route, npc,
+                    Utility.getGameLocationOfCharacter(npc))
+                {
+                    finalFacingDirection = npc.DirectionsToNewLocation.facingDirection,
+                    endBehaviorFunction = null
+                };
+            } catch{}
         }
 
         private static IDictionary<string, string> GetRawSchedule(string npcName) {
