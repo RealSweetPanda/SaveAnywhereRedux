@@ -39,7 +39,6 @@ namespace SaveAnywhere.Framework {
         public override void receiveRightClick(int x, int y, bool playSound = true) { }
 
         public void complete() {
-            Game1.dayOfMonth = Game1.dayOfMonth - 1;
             Game1.playSound("money");
             completePause = 1500;
             loader = null;
@@ -93,7 +92,6 @@ namespace SaveAnywhere.Framework {
                                     if (Game1.newDaySync.readyForSave()) {
                                         multiplayer.saveFarmhands();
                                         Game1.game1.IsSaving = true;
-                                        Game1.dayOfMonth = Game1.dayOfMonth + 2;
                                         loader = SaveGame.Save();
                                         
                                     }
@@ -101,9 +99,7 @@ namespace SaveAnywhere.Framework {
                                 else {
                                     multiplayer.saveFarmhands();
                                     Game1.game1.IsSaving = true;
-                                    Game1.dayOfMonth = Game1.dayOfMonth + 2;
                                     loader = SaveGame.Save();
-                                    Game1.dayOfMonth = Game1.dayOfMonth - 1;
                                 }
                             }
                             else {

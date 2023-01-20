@@ -135,7 +135,7 @@ namespace SaveAnywhere {
                     character.fillInSchedule();
         }
 
-        public virtual object GetApi() {
+        public override object GetApi() {
             return new SaveAnywhereAPI();
         }
     }

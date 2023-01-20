@@ -1,10 +1,10 @@
 ﻿{
   "Name": "Save Anywhere",
   "Author": "Open Source",
-  "Version": "0.1.0",
+  "Version": "3.0.3",
   "Description": "This mod allows you to save your game at any time, anywhere.",
-  "UniqueID": "OpenSource.SaveAnywhere",
+  "UniqueID": "Omegasis.SaveAnywhere",
   "EntryDll": "SaveAnywhere.dll",
   "MinimumApiVersion": "3.0.0",
-  "UpdateKeys": []
+  "UpdateKeys": [ "GitHub:RealSweetPanda/SaveAnywhere", "Nexus:8386" ]
 }
