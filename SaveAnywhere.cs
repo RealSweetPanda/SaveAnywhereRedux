@@ -20,6 +20,8 @@ namespace SaveAnywhere {
         private Dictionary<GameLocation, List<Monster>> monsters;
         public SaveManager SaveManager;
         private bool ShouldResetSchedules;
+        
+
 
         public override void Entry(IModHelper helper) {
             Config = helper.ReadConfig<ModConfig>();
@@ -35,6 +37,7 @@ namespace SaveAnywhere {
             customMenuOpen = false;
             Instance = this;
             firstLoad = false;
+
         }
 
         private void GameLoop_TimeChanged(object sender, TimeChangedEventArgs e) { }
@@ -80,7 +83,9 @@ namespace SaveAnywhere {
 
         private void OnDayStarted(object sender, DayStartedEventArgs e) {
             if (IsCustomSaving)
+            {
                 return;
+            }
             if (!firstLoad) {
                 firstLoad = true;
                 if (SaveManager.saveDataExists()) {
@@ -112,7 +117,7 @@ namespace SaveAnywhere {
             }
         }
 
-        private void ApplySchedules() {
+        public void ApplySchedules() {
             if (Game1.weatherIcon == 4 || Game1.isFestival() || Game1.eventUp)
                 return;
             foreach (var location in Game1.locations)

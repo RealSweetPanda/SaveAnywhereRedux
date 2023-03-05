@@ -238,6 +238,7 @@ namespace SaveAnywhere.Framework {
                     var map2 = npc.currentLocation.Name;
                     var tile2 = npc.getTileLocationPoint();
                     int facingDirection2 = npc.facingDirection;
+                    
                     yield return new CharacterData(type.Value, name2, map2, tile2.X, tile2.Y, facingDirection2);
                     type = new CharacterType?();
                     name2 = null;
@@ -275,6 +276,7 @@ namespace SaveAnywhere.Framework {
                         return (type1 == valueOrDefault) & nullable.HasValue && p.Name == npc.Name;
                     }));
                     if (characterData2 != null) {
+                        npc.fillInSchedule();
                         Game1.warpCharacter(npc, characterData2.Map, new Point(characterData2.X, characterData2.Y));
                         npc.faceDirection(characterData2.FacingDirection);
                     }
