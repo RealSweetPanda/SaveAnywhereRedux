@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using GenericModConfigMenu;
 using SaveAnywhere.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -30,11 +31,34 @@ namespace SaveAnywhere {
             helper.Events.Input.ButtonPressed += OnButtonPressed;
             helper.Events.GameLoop.ReturnedToTitle += GameLoop_ReturnedToTitle;
             helper.Events.GameLoop.TimeChanged += GameLoop_TimeChanged;
+            Helper.Events.GameLoop.GameLaunched += BuildConfigMenu;
             ModHelper = helper;
             ModMonitor = Monitor;
             customMenuOpen = false;
             Instance = this;
             firstLoad = false;
+        }
+
+        private void BuildConfigMenu(object sender, GameLaunchedEventArgs e)
+        {
+            // get Generic Mod Config Menu's API (if it's installed)
+            var configMenu = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+            if (configMenu is null) return;
+
+            // register mod
+            configMenu.Register(
+                mod: this.ModManifest,
+                reset: () => this.Config = new ModConfig(),
+                save: () => this.Helper.WriteConfig(this.Config)
+            );
+
+            configMenu.AddSectionTitle(this.ModManifest, () => "Key Bindings");
+            configMenu.AddKeybind(
+                mod: this.ModManifest,
+                name: () => "Save Key",
+                getValue: () => this.Config.SaveKey,
+                setValue: value => this.Config.SaveKey = value
+            );
         }
 
         private void GameLoop_TimeChanged(object sender, TimeChangedEventArgs e) { }
