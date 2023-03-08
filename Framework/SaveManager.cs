@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Threading;
 using Microsoft.Xna.Framework;
 using SaveAnywhere.Framework.Model;
 using StardewModdingAPI;
@@ -123,7 +125,6 @@ namespace SaveAnywhere.Framework {
             var data = Helper.Data.ReadJsonFile<PlayerData>(RelativeDataPath);
             if (data == null)
                 return;
-            Game1.timeOfDay = data.Time;
             if (data.otherBuffs != null)
             {
                 foreach (var buff in data.otherBuffs)
@@ -188,7 +189,6 @@ namespace SaveAnywhere.Framework {
                     datafood.DisplaySource),datafood.MillisecondsDuration);
             }
             ResumeSwimming(data);
-            SetPositions(data.Characters);
             var onLoaded = OnLoaded;
             if (onLoaded != null)
                 onLoaded();
@@ -196,6 +196,11 @@ namespace SaveAnywhere.Framework {
                 afterLoad(this, EventArgs.Empty);
             foreach (var keyValuePair in afterSaveLoaded)
                 keyValuePair.Value();
+            SetPositions(data.Characters);
+            SafelySetTime(data.Time);
+            
+
+                
         }
 
         public void ResumeSwimming(PlayerData data) {
@@ -267,6 +272,8 @@ namespace SaveAnywhere.Framework {
 
             foreach (var allCharacter in Utility.getAllCharacters()) {
                 var npc = allCharacter;
+                
+                
                 var type = GetCharacterType(npc);
                 if (type.HasValue) {
                     var characterData2 = positions.FirstOrDefault((Func<CharacterData, bool>) (p => {
@@ -276,9 +283,12 @@ namespace SaveAnywhere.Framework {
                         return (type1 == valueOrDefault) & nullable.HasValue && p.Name == npc.Name;
                     }));
                     if (characterData2 != null) {
-                        npc.fillInSchedule();
-                        Game1.warpCharacter(npc, characterData2.Map, new Point(characterData2.X, characterData2.Y));
-                        npc.faceDirection(characterData2.FacingDirection);
+                        // send in SMAPI console a message
+                        SaveAnywhere.ModMonitor.Log("Loaded someone",LogLevel.Debug);
+                        
+                        // Game1.warpCharacter(npc, characterData2.Map, new Point(characterData2.X, characterData2.Y));
+                        // npc.faceDirection(characterData2.FacingDirection);
+                        //
                     }
                 }
             }
@@ -305,6 +315,35 @@ namespace SaveAnywhere.Framework {
             if (!directoryInfo1.Exists || directoryInfo1.EnumerateDirectories().Any())
                 return;
             directoryInfo1.Delete(true);
+        }
+        
+        private void SafelySetTime(int time)
+        {
+            // transition to new time
+            int intervals = Utility.CalculateMinutesBetweenTimes(Game1.timeOfDay, time) / 10;
+            if (intervals > 0)
+            {
+                for (int i = 0; i < intervals; i++)
+                    Game1.performTenMinuteClockUpdate();
+            }
+            else if (intervals < 0)
+            {
+                for (int i = 0; i > intervals; i--)
+                {
+                    Game1.timeOfDay = Utility.ModifyTime(Game1.timeOfDay, -20); // offset 20 mins so game updates to next interval
+                    Game1.performTenMinuteClockUpdate();
+                }
+            }
+
+            // reset ambient light
+            // White is the default non-raining color. If it's raining or dark out, UpdateGameClock
+            // below will update it automatically.
+            Game1.outdoorLight = Color.White;
+            Game1.ambientLight = Color.White;
+
+            // run clock update (to correct lighting, etc)
+            Game1.gameTimeInterval = 0;
+            Game1.UpdateGameClock(Game1.currentGameTime);
         }
     }
 }

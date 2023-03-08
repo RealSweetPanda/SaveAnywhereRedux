@@ -34,53 +34,19 @@ namespace SaveAnywhere.Framework {
                     if (schedulePathInfo.timeToGoTo != 0)
                         source.Add(schedulePathInfo.timeToGoTo, schedulePathInfo);
                 }
-
-                var index1 = 0;
-                var list = source.ToList();
-                list.OrderBy((Func<KeyValuePair<int, SchedulePathInfo>, int>)(i => i.Key));
-                KeyValuePair<int, SchedulePathInfo> keyValuePair;
-                for (var key1 = 600; key1 <= 2600; key1 += 10)
-                    if (index1 >= list.Count && !source.ContainsKey(key1))
-                    {
-                        var sortedDictionary = source;
-                        var key2 = key1;
-                        // fix ArgumentOutOfRangeException that happens below
-                        if (list.Count != 0) keyValuePair = list[list.Count - 1];
-                        else keyValuePair = new KeyValuePair<int, SchedulePathInfo>();
-                        var schedulePathInfo = keyValuePair.Value;
-                        sortedDictionary.Add(key2, schedulePathInfo);
-                    }
-                    else if (index1 == list.Count - 1)
-                    {
-                        if (!source.ContainsKey(key1))
-                        {
-                            var sortedDictionary = source;
-                            var key3 = key1;
-                            keyValuePair = list[index1];
-                            var schedulePathInfo = keyValuePair.Value;
-                            sortedDictionary.Add(key3, schedulePathInfo);
-                        }
-                    }
-                    else
-                    {
-                        var num = key1;
-                        keyValuePair = list[index1 + 1];
-                        var key4 = keyValuePair.Key;
-                        if (num == key4)
-                        {
-                            ++index1;
-                        }
-                        else if (!source.ContainsKey(key1))
-                        {
-                            var sortedDictionary = source;
-                            var key5 = key1;
-                            keyValuePair = list[index1];
-                            var schedulePathInfo = keyValuePair.Value;
-                            sortedDictionary.Add(key5, schedulePathInfo);
-                        }
-                    }
-
-                var schedulePathInfo1 = source[Game1.timeOfDay];
+                
+                var schedulePathInfo1 = source.First().Value;
+                var schedule = new Dictionary<int, SchedulePathDescription>();
+                foreach (var scheduleInfo in source.ToList())
+                {
+                    var value = SaveAnywhere.ModHelper.Reflection
+                        .GetMethod(npc, "pathfindToNextScheduleLocation").Invoke<SchedulePathDescription>(
+                            npc.currentLocation.Name, npc.getTileX(), npc.getTileY(), scheduleInfo.Value.endMap,
+                            scheduleInfo.Value.endX, scheduleInfo.Value.endY, scheduleInfo.Value.endDirection,
+                            scheduleInfo.Value.endBehavior, scheduleInfo.Value.endMessage);
+                    schedule.Add(scheduleInfo.Key, value);
+                }
+                npc.Schedule = schedule;
                 var schedulePathDescription = SaveAnywhere.ModHelper.Reflection
                     .GetMethod(npc, "pathfindToNextScheduleLocation").Invoke<SchedulePathDescription>(
                         npc.currentLocation.Name, npc.getTileX(), npc.getTileY(), schedulePathInfo1.endMap,

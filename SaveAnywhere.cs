@@ -90,7 +90,6 @@ namespace SaveAnywhere {
                 firstLoad = true;
                 if (SaveManager.saveDataExists()) {
                     ShouldResetSchedules = false;
-                    ApplySchedules();
                 }
             }
             else if (firstLoad) {
