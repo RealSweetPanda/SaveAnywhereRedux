@@ -6,7 +6,7 @@
         public BuffData drinkBuff { get; init; }
         
         public BuffData foodBuff { get; init; }
-        public CharacterData[] Characters { get; init; }
+        public PositionData Position { get; init; }
 
         public bool IsCharacterSwimming { get; init; }
     }
