@@ -21,13 +21,15 @@ namespace SaveAnywhere {
         private Dictionary<GameLocation, List<Monster>> monsters;
         public SaveManager SaveManager;
         private bool ShouldResetSchedules;
+        
+
 
         public override void Entry(IModHelper helper) {
             Config = helper.ReadConfig<ModConfig>();
             SaveManager = new SaveManager(Helper, Helper.Reflection, () => ShouldResetSchedules = true);
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
             helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-            helper.Events.GameLoop.DayStarted += OnDayStarted;
+            helper.Events.GameLoop.DayEnding += OnDayEnded;
             helper.Events.Input.ButtonPressed += OnButtonPressed;
             helper.Events.GameLoop.ReturnedToTitle += GameLoop_ReturnedToTitle;
             helper.Events.GameLoop.TimeChanged += GameLoop_TimeChanged;
@@ -37,6 +39,7 @@ namespace SaveAnywhere {
             customMenuOpen = false;
             Instance = this;
             firstLoad = false;
+
         }
 
         private void BuildConfigMenu(object sender, GameLaunchedEventArgs e)
@@ -68,8 +71,16 @@ namespace SaveAnywhere {
         }
 
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e) {
-            ShouldResetSchedules = false;
-            SaveManager.LoadData();
+            // ShouldResetSchedules = true;
+            if (SaveManager.saveDataExists())
+            {
+                SaveManager.LoadData();
+            }
+        }
+
+        private void OnDayEnded(object sender, DayEndingEventArgs e)
+        {
+            SaveManager.ClearData();
         }
 
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e) {
@@ -102,22 +113,6 @@ namespace SaveAnywhere {
             Instance.monsters.Clear();
         }
 
-        private void OnDayStarted(object sender, DayStartedEventArgs e) {
-            if (IsCustomSaving)
-                return;
-            if (!firstLoad) {
-                firstLoad = true;
-                if (SaveManager.saveDataExists()) {
-                    ShouldResetSchedules = false;
-                    ApplySchedules();
-                }
-            }
-            else if (firstLoad) {
-                SaveManager.ClearData();
-            }
-            ShouldResetSchedules = true;
-        }
-
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e) {
             if (!Context.IsPlayerFree || e.Button != Config.SaveKey || Game1.eventUp || Game1.isFestival())
                 return;
@@ -135,15 +130,7 @@ namespace SaveAnywhere {
                 Game1.addHUDMessage(new HUDMessage("Only server hosts can save anywhere.", 3));
             }
         }
-
-        private void ApplySchedules() {
-            if (Game1.weatherIcon == 4 || Game1.isFestival() || Game1.eventUp)
-                return;
-            foreach (var location in Game1.locations)
-            foreach (var character in location.characters)
-                if (character.isVillager())
-                    character.fillInSchedule();
-        }
+        
 
         public override object GetApi() {
             return new SaveAnywhereAPI();

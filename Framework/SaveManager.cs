@@ -6,8 +6,6 @@ using Microsoft.Xna.Framework;
 using SaveAnywhere.Framework.Model;
 using StardewModdingAPI;
 using StardewValley;
-using StardewValley.Characters;
-using StardewValley.Monsters;
 
 namespace SaveAnywhere.Framework {
     public class SaveManager {
@@ -23,7 +21,7 @@ namespace SaveAnywhere.Framework {
         public SaveManager(IModHelper helper, IReflectionHelper reflection, Action onLoaded) {
             Helper = helper;
             Reflection = reflection;
-            OnLoaded = onLoaded;
+            // OnLoaded = onLoaded;
             beforeCustomSavingBegins = new Dictionary<string, Action>();
             afterCustomSavingCompleted = new Dictionary<string, Action>();
             afterSaveLoaded = new Dictionary<string, Action>();
@@ -113,7 +111,7 @@ namespace SaveAnywhere.Framework {
                 otherBuffs = GetotherBuffs().ToArray(),
                 drinkBuff = drinkdata,
                 foodBuff = fooddata,
-                Characters = GetPositions().ToArray(),
+                Position = GetPosition(),
                 IsCharacterSwimming = Game1.player.swimming.Value
             });
             RemoveLegacyDataForThisPlayer();
@@ -123,7 +121,7 @@ namespace SaveAnywhere.Framework {
             var data = Helper.Data.ReadJsonFile<PlayerData>(RelativeDataPath);
             if (data == null)
                 return;
-            Game1.timeOfDay = data.Time;
+            SetPositions(data.Position);
             if (data.otherBuffs != null)
             {
                 foreach (var buff in data.otherBuffs)
@@ -188,7 +186,6 @@ namespace SaveAnywhere.Framework {
                     datafood.DisplaySource),datafood.MillisecondsDuration);
             }
             ResumeSwimming(data);
-            SetPositions(data.Characters);
             var onLoaded = OnLoaded;
             if (onLoaded != null)
                 onLoaded();
@@ -196,6 +193,7 @@ namespace SaveAnywhere.Framework {
                 afterLoad(this, EventArgs.Empty);
             foreach (var keyValuePair in afterSaveLoaded)
                 keyValuePair.Value();
+            SafelySetTime(data.Time);
         }
 
         public void ResumeSwimming(PlayerData data) {
@@ -217,7 +215,7 @@ namespace SaveAnywhere.Framework {
                 );
             }
         }
-        private IEnumerable<CharacterData> GetPositions() {
+        private PositionData GetPosition() {
             var player = Game1.player;
             var name1 = player.Name;
             var map1 = player.currentLocation.uniqueName.Value;
@@ -225,75 +223,27 @@ namespace SaveAnywhere.Framework {
                 map1 = player.currentLocation.Name;
             var tile1 = player.getTileLocationPoint();
             int facingDirection1 = player.facingDirection;
-            yield return new CharacterData(CharacterType.Player, name1, map1, tile1.X, tile1.Y, facingDirection1);
-            player = null;
-            name1 = null;
-            map1 = null;
-            tile1 = new Point();
-            foreach (var allCharacter in Utility.getAllCharacters()) {
-                var npc = allCharacter;
-                var type = GetCharacterType(npc);
-                if (type.HasValue && npc?.currentLocation != null) {
-                    var name2 = npc.Name;
-                    var map2 = npc.currentLocation.Name;
-                    var tile2 = npc.getTileLocationPoint();
-                    int facingDirection2 = npc.facingDirection;
-                    yield return new CharacterData(type.Value, name2, map2, tile2.X, tile2.Y, facingDirection2);
-                    type = new CharacterType?();
-                    name2 = null;
-                    map2 = null;
-                    tile2 = new Point();
-                    npc = null;
-                }
-            }
+            return new PositionData(name1, map1, tile1.X, tile1.Y, facingDirection1);
+
         }
 
-        private void SetPositions(CharacterData[] positions) {
-            foreach (var playerCharacterData in positions) {
-                if (playerCharacterData.Type != CharacterType.Player ||
-                    !playerCharacterData.Name.Equals(Game1.player.Name)) continue;
-                
+        private void SetPositions(PositionData position) {
+
                 Game1.player.previousLocationName = Game1.player.currentLocation.Name;
-                Game1.xLocationAfterWarp = playerCharacterData.X;
-                Game1.yLocationAfterWarp = playerCharacterData.Y;
-                Game1.facingDirectionAfterWarp = playerCharacterData.FacingDirection;
+                Game1.xLocationAfterWarp = position.X;
+                Game1.yLocationAfterWarp = position.Y;
+                Game1.facingDirectionAfterWarp = position.FacingDirection;
                 Game1.fadeScreenToBlack();
-                Game1.warpFarmer(playerCharacterData.Map, playerCharacterData.X, playerCharacterData.Y, false);
-                Game1.player.faceDirection(playerCharacterData.FacingDirection);
-                
-                break;
-            }
+                Game1.warpFarmer(position.Map, position.X, position.Y, false);
+                Game1.player.faceDirection(position.FacingDirection);
+            
 
-            foreach (var allCharacter in Utility.getAllCharacters()) {
-                var npc = allCharacter;
-                var type = GetCharacterType(npc);
-                if (type.HasValue) {
-                    var characterData2 = positions.FirstOrDefault((Func<CharacterData, bool>) (p => {
-                        var type1 = (int) p.Type;
-                        var nullable = type;
-                        var valueOrDefault = (int) nullable.GetValueOrDefault();
-                        return (type1 == valueOrDefault) & nullable.HasValue && p.Name == npc.Name;
-                    }));
-                    if (characterData2 != null) {
-                        Game1.warpCharacter(npc, characterData2.Map, new Point(characterData2.X, characterData2.Y));
-                        npc.faceDirection(characterData2.FacingDirection);
-                    }
-                }
-            }
+        foreach (var allCharacter in Utility.getAllCharacters()) {
+            allCharacter.dayUpdate(Game1.dayOfMonth);
+        }
         }
 
-        private CharacterType? GetCharacterType(NPC npc) {
-            switch (npc) {
-                case Monster _:
-                    return new CharacterType?();
-                case Horse _:
-                    return CharacterType.Horse;
-                case Pet _:
-                    return CharacterType.Pet;
-                default:
-                    return CharacterType.Villager;
-            }
-        }
+
 
         private void RemoveLegacyDataForThisPlayer() {
             var directoryInfo1 = new DirectoryInfo(Path.Combine(Helper.DirectoryPath, "Save_Data"));
@@ -303,6 +253,35 @@ namespace SaveAnywhere.Framework {
             if (!directoryInfo1.Exists || directoryInfo1.EnumerateDirectories().Any())
                 return;
             directoryInfo1.Delete(true);
+        }
+        
+        private void SafelySetTime(int time)
+        {
+            // transition to new time
+            int intervals = Utility.CalculateMinutesBetweenTimes(Game1.timeOfDay, time) / 10;
+            if (intervals > 0)
+            {
+                for (int i = 0; i < intervals; i++)
+                    Game1.performTenMinuteClockUpdate();
+            }
+            else if (intervals < 0)
+            {
+                for (int i = 0; i > intervals; i--)
+                {
+                    Game1.timeOfDay = Utility.ModifyTime(Game1.timeOfDay, -20); // offset 20 mins so game updates to next interval
+                    Game1.performTenMinuteClockUpdate();
+                }
+            }
+
+            // reset ambient light
+            // White is the default non-raining color. If it's raining or dark out, UpdateGameClock
+            // below will update it automatically.
+            Game1.outdoorLight = Color.White;
+            Game1.ambientLight = Color.White;
+
+            // run clock update (to correct lighting, etc)
+            Game1.gameTimeInterval = 0;
+            Game1.UpdateGameClock(Game1.currentGameTime);
         }
     }
 }
