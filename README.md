@@ -1,5 +1,7 @@
 # Save Anywhere Redux
 
+Save Anywhere Made Much More Stable!
+
 #### Updated for SDV 1.5!
 
 Compatible with Stardew Valley 1.5+ on Linux, Mac, and Windows. Requires SMAPI 3.0 or later.
