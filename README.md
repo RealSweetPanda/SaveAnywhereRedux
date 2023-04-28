@@ -1,4 +1,4 @@
-# SaveAnywhere 1.5
+# Save Anywhere Redux
 
 #### Updated for SDV 1.5!
 
@@ -14,14 +14,13 @@ Run the game using SMAPI.
 
 ### How To Use
 
-Press K to save anywhere. Edit the `config.json` file in a text editor to change the key (it will appear after you run
-the game once).
+Press K to save anywhere. Edit the config.json file in a text editor to change the key (it will appear once you run the game), if you have GMCM use it instead.
 
-#### Created by Omegasis, Aredjay, CMiSSioN and Sweet Panda
+#### Created by Omegasis, Aredjay, and RealSweetPanda
 
 ### Notes
 
-*This mod is
-also **semi-experimental meaning that it can crash and cause issues. This is hit or miss. PLEASE BACKUP BEFORE USING**
-If you have a problem it is probably because of a mod conflict. The best experience will be with no other big mods,
-Again, this doesn't always happen it's just a thing to take note of.*
+The mod should now work with map extension mods, modded characters, modded items, etc in the newest update. If it doesn't, report it and we can fix it. 
+
+As much as we want to make the mod stable it can always This mod might crash and cause issues. just be aware and if it occurs just report it and we will fix it!
+
