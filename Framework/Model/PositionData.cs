@@ -1,4 +1,5 @@
-﻿namespace SaveAnywhere.Framework.Model {
+﻿namespace SaveAnywhere.Framework.Model
+{
     public sealed record PositionData(
         string Name,
         string Map,

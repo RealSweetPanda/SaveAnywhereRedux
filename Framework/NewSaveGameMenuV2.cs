@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -10,38 +9,43 @@ using StardewValley;
 using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
 
-namespace SaveAnywhere.Framework {
-    public class NewSaveGameMenuV2 : IClickableMenu {
+namespace SaveAnywhere.Framework
+{
+    public class NewSaveGameMenuV2 : IClickableMenu
+    {
+        private readonly StringBuilder _stringBuilder = new();
+        private readonly SparklingText _saveText;
         private int _ellipsisCount;
         private float _ellipsisDelay = 0.5f;
-        protected bool _hasSentFarmhandData;
-        private readonly StringBuilder _stringBuilder = new();
-        private int completePause = -1;
-        public bool hasDrawn;
-        private IEnumerator<int> loader;
-        private int margin = 500;
-        public Multiplayer multiplayer;
-        public bool quit;
-        private readonly SparklingText saveText;
-        private Stopwatch stopwatch;
+        private bool _hasSentFarmhandData;
+        private int _completePause = -1;
+        private bool _hasDrawn;
+        private IEnumerator<int> _loader;
+        private int _margin = 500;
+        public Multiplayer Multiplayer;
+        private bool _quit;
 
-        public NewSaveGameMenuV2() {
-            saveText = new SparklingText(Game1.dialogueFont,
+        public NewSaveGameMenuV2()
+        {
+            _saveText = new SparklingText(Game1.dialogueFont,
                 Game1.content.LoadString("Strings\\StringsFromCSFiles:SaveGameMenu.cs.11378"), Color.LimeGreen,
                 Color.Black * 0.001F, false, 0.1, 1500, 32);
             _hasSentFarmhandData = false;
-            multiplayer = (Multiplayer) typeof(Game1)
-                .GetField(nameof(multiplayer), BindingFlags.Static | BindingFlags.NonPublic).GetValue(Program.gamePtr);
+            Multiplayer = (Multiplayer)typeof(Game1)
+                .GetField(nameof(Multiplayer), BindingFlags.Static | BindingFlags.NonPublic).GetValue(Program.gamePtr);
         }
 
         public event EventHandler SaveComplete;
 
-        public override void receiveRightClick(int x, int y, bool playSound = true) { }
+        public override void receiveRightClick(int x, int y, bool playSound = true)
+        {
+        }
 
-        public void complete() {
+        private void complete()
+        {
             Game1.playSound("money");
-            completePause = 1500;
-            loader = null;
+            _completePause = 1500;
+            _loader = null;
             Game1.game1.IsSaving = false;
             if (!Game1.IsMasterGame || Game1.newDaySync == null || Game1.newDaySync.hasSaved())
                 return;
@@ -49,122 +53,149 @@ namespace SaveAnywhere.Framework {
             SaveComplete(this, EventArgs.Empty);
         }
 
-        public override bool readyToClose() {
+        public override bool readyToClose()
+        {
             return false;
         }
 
-        public override void update(GameTime time) {
-            if (quit) {
+        public override void update(GameTime time)
+        {
+            if (_quit)
+            {
                 if (!Game1.activeClickableMenu.Equals(this) || !Game1.PollForEndOfNewDaySync())
                     return;
                 Game1.exitActiveMenu();
             }
-            else {
+            else
+            {
                 base.update(time);
-                if (Game1.client != null && Game1.client.timedOut) {
-                    quit = true;
+                if (Game1.client is { timedOut: true })
+                {
+                    _quit = true;
                     if (!Game1.activeClickableMenu.Equals(this))
                         return;
                     Game1.exitActiveMenu();
                 }
-                else {
-                    _ellipsisDelay -= (float) time.ElapsedGameTime.TotalSeconds;
-                    if (_ellipsisDelay <= 0.0) {
+                else
+                {
+                    _ellipsisDelay -= (float)time.ElapsedGameTime.TotalSeconds;
+                    if (_ellipsisDelay <= 0.0)
+                    {
                         _ellipsisDelay += 0.75f;
                         ++_ellipsisCount;
                         if (_ellipsisCount > 3)
                             _ellipsisCount = 1;
                     }
 
-                    if (loader != null) {
-                        loader.MoveNext();
-                        if (loader.Current >= 100) {
-                            margin -= time.ElapsedGameTime.Milliseconds;
-                            if (margin <= 0)
+                    if (_loader != null)
+                    {
+                        _loader.MoveNext();
+                        if (_loader.Current >= 100)
+                        {
+                            _margin -= time.ElapsedGameTime.Milliseconds;
+                            if (_margin <= 0)
                                 complete();
                         }
                     }
-                    else if (hasDrawn && completePause == -1) {
-                        if (Game1.IsMasterGame) {
-                            if (Game1.saveOnNewDay) {
+                    else if (_hasDrawn && _completePause == -1)
+                    {
+                        if (Game1.IsMasterGame)
+                        {
+                            if (Game1.saveOnNewDay)
+                            {
                                 Game1.player.team.endOfNightStatus.UpdateState("ready");
-                                if (Game1.newDaySync != null) {
-                                    if (Game1.newDaySync.readyForSave()) {
-                                        multiplayer.saveFarmhands();
+                                if (Game1.newDaySync != null)
+                                {
+                                    if (Game1.newDaySync.readyForSave())
+                                    {
+                                        Multiplayer.saveFarmhands();
                                         Game1.game1.IsSaving = true;
-                                        loader = SaveGame.Save();
-                                        
+                                        _loader = SaveGame.Save();
                                     }
                                 }
-                                else {
-                                    multiplayer.saveFarmhands();
+                                else
+                                {
+                                    Multiplayer.saveFarmhands();
                                     Game1.game1.IsSaving = true;
-                                    loader = SaveGame.Save();
+                                    _loader = SaveGame.Save();
                                 }
                             }
-                            else {
-                                margin = -1;
-                                if (Game1.newDaySync != null) {
-                                    if (Game1.newDaySync.readyForSave()) {
+                            else
+                            {
+                                _margin = -1;
+                                if (Game1.newDaySync != null)
+                                {
+                                    if (Game1.newDaySync.readyForSave())
+                                    {
                                         Game1.game1.IsSaving = true;
                                         complete();
                                     }
                                 }
-                                else {
+                                else
+                                {
                                     complete();
                                 }
                             }
                         }
-                        else {
-                            if (!_hasSentFarmhandData) {
+                        else
+                        {
+                            if (!_hasSentFarmhandData)
+                            {
                                 _hasSentFarmhandData = true;
-                                multiplayer.sendFarmhand();
+                                Multiplayer.sendFarmhand();
                             }
 
-                            multiplayer.UpdateLate();
-                            multiplayer.UpdateEarly();
+                            Multiplayer.UpdateLate();
+                            Multiplayer.UpdateEarly();
                             if (Game1.newDaySync != null)
                                 Game1.newDaySync.readyForSave();
                             Game1.player.team.endOfNightStatus.UpdateState("ready");
-                            if (Game1.newDaySync != null) {
+                            if (Game1.newDaySync != null)
+                            {
                                 if (Game1.newDaySync.hasSaved())
                                     complete();
                             }
-                            else {
+                            else
+                            {
                                 complete();
                             }
                         }
                     }
 
-                    if (completePause < 0)
+                    if (_completePause < 0)
                         return;
-                    completePause -= time.ElapsedGameTime.Milliseconds;
-                    saveText.update(time);
-                    if (completePause >= 0)
+                    _completePause -= time.ElapsedGameTime.Milliseconds;
+                    _saveText.update(time);
+                    if (_completePause >= 0)
                         return;
-                    quit = true;
-                    completePause = -9999;
+                    _quit = true;
+                    _completePause = -9999;
                 }
             }
         }
 
-        public static void saveClientOptions() {
+        public static void saveClientOptions()
+        {
             var startupPreferences = new StartupPreferences();
             startupPreferences.loadPreferences(false, true);
             startupPreferences.clientOptions = Game1.options;
             startupPreferences.savePreferences(false);
         }
 
-        public override void draw(SpriteBatch b) {
+        public override void draw(SpriteBatch b)
+        {
             base.draw(b);
             var vector2 = Utility.makeSafe(new Vector2(64f, Game1.viewport.Height - 64), new Vector2(64f, 64f));
             var flag = false;
-            if (completePause >= 0) {
+            if (_completePause >= 0)
+            {
                 if (Game1.saveOnNewDay)
-                    saveText.draw(b, vector2);
+                    _saveText.draw(b, vector2);
             }
-            else if (margin < 0 || Game1.IsClient) {
-                if (Game1.IsMultiplayer) {
+            else if (_margin < 0 || Game1.IsClient)
+            {
+                if (Game1.IsMultiplayer)
+                {
                     _stringBuilder.Clear();
                     _stringBuilder.Append(Game1.content.LoadString("Strings\\UI:ReadyCheck",
                         Game1.newDaySync.numReadyForSave(), Game1.getOnlineFarmers().Count()));
@@ -174,14 +205,16 @@ namespace SaveAnywhere.Framework {
                     flag = true;
                 }
             }
-            else if (!Game1.IsMultiplayer) {
+            else if (!Game1.IsMultiplayer)
+            {
                 _stringBuilder.Clear();
                 _stringBuilder.Append(Game1.content.LoadString("Strings\\StringsFromCSFiles:SaveGameMenu.cs.11381"));
                 for (var index = 0; index < _ellipsisCount; ++index)
                     _stringBuilder.Append(".");
                 b.DrawString(Game1.dialogueFont, _stringBuilder, vector2, Color.White);
             }
-            else {
+            else
+            {
                 _stringBuilder.Clear();
                 _stringBuilder.Append(Game1.content.LoadString("Strings\\UI:ReadyCheck",
                     Game1.newDaySync.numReadyForSave(), Game1.getOnlineFarmers().Count()));
@@ -191,17 +224,18 @@ namespace SaveAnywhere.Framework {
                 flag = true;
             }
 
-            if (completePause > 0)
+            if (_completePause > 0)
                 flag = false;
             if (Game1.newDaySync != null && Game1.newDaySync.hasSaved())
                 flag = false;
             if (Game1.IsMultiplayer & flag && Game1.options.showMPEndOfNightReadyStatus)
                 Game1.player.team.endOfNightStatus.Draw(b, vector2 + new Vector2(0.0f, -32f), 4f, 0.99f, 0,
-                    (PlayerStatusList.VerticalAlignment) 1);
-            hasDrawn = true;
+                    (PlayerStatusList.VerticalAlignment)1);
+            _hasDrawn = true;
         }
 
-        public void Dispose() {
+        public void Dispose()
+        {
             Game1.game1.IsSaving = false;
         }
     }

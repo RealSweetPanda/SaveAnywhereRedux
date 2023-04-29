@@ -1,45 +1,55 @@
 ﻿using System;
 
-namespace SaveAnywhere.Framework {
-    public class SaveAnywhereAPI {
-        
-        public event EventHandler BeforeSave {
-            add => SaveAnywhere.Instance.SaveManager.beforeSave += value;
-            remove => SaveAnywhere.Instance.SaveManager.beforeSave -= value;
+namespace SaveAnywhere.Framework
+{
+    public class SaveAnywhereApi
+    {
+        public event EventHandler BeforeSave
+        {
+            add => SaveAnywhere.Instance.SaveManager.BeforeSave += value;
+            remove => SaveAnywhere.Instance.SaveManager.BeforeSave -= value;
         }
 
-        public event EventHandler AfterSave {
-            add => SaveAnywhere.Instance.SaveManager.afterSave += value;
-            remove => SaveAnywhere.Instance.SaveManager.afterSave -= value;
+        public event EventHandler AfterSave
+        {
+            add => SaveAnywhere.Instance.SaveManager.AfterSave += value;
+            remove => SaveAnywhere.Instance.SaveManager.AfterSave -= value;
         }
 
-        public event EventHandler AfterLoad {
-            add => SaveAnywhere.Instance.SaveManager.afterLoad += value;
-            remove => SaveAnywhere.Instance.SaveManager.afterLoad -= value;
+        public event EventHandler AfterLoad
+        {
+            add => SaveAnywhere.Instance.SaveManager.AfterLoad += value;
+            remove => SaveAnywhere.Instance.SaveManager.AfterLoad -= value;
         }
 
-        public void addBeforeSaveEvent(string ID, Action BeforeSave) {
-            SaveAnywhere.Instance.SaveManager.beforeCustomSavingBegins.Add(ID, BeforeSave);
+        public void addBeforeSaveEvent(string id, Action beforeSave)
+        {
+            SaveAnywhere.Instance.SaveManager.BeforeCustomSavingBegins.Add(id, beforeSave);
         }
 
-        public void removeBeforeSaveEvent(string ID, Action BeforeSave) {
-            SaveAnywhere.Instance.SaveManager.beforeCustomSavingBegins.Remove(ID);
+        public void removeBeforeSaveEvent(string id, Action beforeSave)
+        {
+            SaveAnywhere.Instance.SaveManager.BeforeCustomSavingBegins.Remove(id);
         }
 
-        public void addAfterSaveEvent(string ID, Action AfterSave) {
-            SaveAnywhere.Instance.SaveManager.afterCustomSavingCompleted.Add(ID, AfterSave);
+        public void addAfterSaveEvent(string id, Action afterSave)
+        {
+            SaveAnywhere.Instance.SaveManager.AfterCustomSavingCompleted.Add(id, afterSave);
         }
 
-        public void removeAfterSaveEvent(string ID, Action AfterSave) {
-            SaveAnywhere.Instance.SaveManager.afterCustomSavingCompleted.Remove(ID);
+        public void removeAfterSaveEvent(string id, Action afterSave)
+        {
+            SaveAnywhere.Instance.SaveManager.AfterCustomSavingCompleted.Remove(id);
         }
 
-        public void addAfterLoadEvent(string ID, Action AfterLoad) {
-            SaveAnywhere.Instance.SaveManager.afterSaveLoaded.Add(ID, AfterLoad);
+        public void addAfterLoadEvent(string id, Action afterLoad)
+        {
+            SaveAnywhere.Instance.SaveManager.AfterSaveLoaded.Add(id, afterLoad);
         }
 
-        public void removeAfterLoadEvent(string ID, Action AfterLoad) {
-            SaveAnywhere.Instance.SaveManager.afterSaveLoaded.Remove(ID);
+        public void removeAfterLoadEvent(string id, Action afterLoad)
+        {
+            SaveAnywhere.Instance.SaveManager.AfterSaveLoaded.Remove(id);
         }
     }
 }
