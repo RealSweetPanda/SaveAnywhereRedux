@@ -32,7 +32,7 @@ namespace SaveAnywhere.Framework
                 Color.Black * 0.001F, false, 0.1, 1500, 32);
             _hasSentFarmhandData = false;
             multiplayer = (Multiplayer)typeof(Game1)
-                .GetField(nameof(Multiplayer), BindingFlags.Static | BindingFlags.NonPublic).GetValue(Program.gamePtr);
+                .GetField(nameof(multiplayer), BindingFlags.Static | BindingFlags.NonPublic).GetValue(Program.gamePtr);
         }
 
         public event EventHandler SaveComplete;
