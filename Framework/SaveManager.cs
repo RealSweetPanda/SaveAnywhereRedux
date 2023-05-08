@@ -233,6 +233,14 @@ namespace SaveAnywhere.Framework
 
         private IEnumerable<PositionData> GetPosition()
         {
+            try
+            {
+
+            }
+            catch (Exception e)
+            {
+                
+            }
             var player = Game1.player;
             var name1 = player.Name;
             var map1 = player.currentLocation.uniqueName.Value;
@@ -254,6 +262,7 @@ namespace SaveAnywhere.Framework
             Game1.player.faceDirection(position[0].FacingDirection);
             foreach (var allCharacter in Utility.getAllCharacters())
             {
+                
                 allCharacter.dayUpdate(Game1.dayOfMonth);
                 if (allCharacter.isVillager())
                 {
@@ -265,7 +274,7 @@ namespace SaveAnywhere.Framework
                         Game1.facingDirectionAfterWarp = pos.FacingDirection;
                         Game1.warpCharacter(allCharacter, pos.Map, new Point(pos.X, pos.Y));
                         allCharacter.faceDirection(pos.FacingDirection);
-                        var newSchedule = allCharacter.getSchedule(Game1.dayOfMonth).DeepClone();
+                        var newSchedule = allCharacter.getSchedule(Game1.dayOfMonth);
                         if (newSchedule != null)
                         {
                             var dest = allCharacter.getSchedule(Game1.dayOfMonth)
@@ -282,7 +291,8 @@ namespace SaveAnywhere.Framework
                                 }
 
                                 newSchedule.Remove(dest.Key);
-                                newSchedule.Add(time,
+                                while (newSchedule.ContainsKey(dest.Key)){}
+                                newSchedule.TryAdd(time,
                                     allCharacter.pathfindToNextScheduleLocation(pos.Map, pos.X, pos.Y, destMap,
                                         dest.Value.route.Last().X, dest.Value.route.Last().Y,
                                         dest.Value.facingDirection,
@@ -302,6 +312,7 @@ namespace SaveAnywhere.Framework
             }
 
             SafelySetTime(time);
+            Utility.fixAllAnimals();
         }
 
 
