@@ -239,14 +239,6 @@ namespace SaveAnywhere.Framework
 
         private IEnumerable<PositionData> GetPosition()
         {
-            try
-            {
-
-            }
-            catch (Exception e)
-            {
-                
-            }
             var player = Game1.player;
             var name1 = player.Name;
             var map1 = player.currentLocation.uniqueName.Value;
