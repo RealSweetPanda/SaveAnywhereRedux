@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Force.DeepCloner;
 using Microsoft.Xna.Framework;
 using SaveAnywhere.Framework.Model;
 using StardewModdingAPI;
@@ -65,6 +64,7 @@ namespace SaveAnywhere.Framework
         {
             if (File.Exists(Path.Combine(_helper.DirectoryPath, RelativeDataPath)))
                 File.Delete(Path.Combine(_helper.DirectoryPath, RelativeDataPath));
+            _helper.Data.WriteSaveData<PlayerData>("midday-save", null);
             RemoveLegacyDataForThisPlayer();
         }
 
@@ -113,7 +113,7 @@ namespace SaveAnywhere.Framework
                     food.millisecondsDuration,
                     food.buffAttributes
                 );
-            _helper.Data.WriteJsonFile(RelativeDataPath, new PlayerData
+            _helper.Data.WriteSaveData("midday-save", new PlayerData
             {
                 Time = Game1.timeOfDay,
                 OtherBuffs = GetotherBuffs().ToArray(),
@@ -127,9 +127,15 @@ namespace SaveAnywhere.Framework
 
         public void LoadData()
         {
-            var data = _helper.Data.ReadJsonFile<PlayerData>(RelativeDataPath);
+            var data = _helper.Data.ReadSaveData<PlayerData>("midday-save");
             if (data == null)
-                return;
+            {
+                data = _helper.Data.ReadJsonFile<PlayerData>(RelativeDataPath);
+                if (data == null)
+                    return;
+                ClearData();
+                _helper.Data.WriteSaveData("midday-save", data);
+            }
             SetPositions(data.Position, data.Time);
             if (data.OtherBuffs != null)
                 foreach (var buff in data.OtherBuffs)
@@ -233,14 +239,6 @@ namespace SaveAnywhere.Framework
 
         private IEnumerable<PositionData> GetPosition()
         {
-            try
-            {
-
-            }
-            catch (Exception e)
-            {
-                
-            }
             var player = Game1.player;
             var name1 = player.Name;
             var map1 = player.currentLocation.uniqueName.Value;
