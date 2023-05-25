@@ -70,30 +70,18 @@ namespace SaveAnywhere.Framework
 
         public bool saveDataExists()
         {
-            return File.Exists(Path.Combine(_helper.DirectoryPath, RelativeDataPath));
+            return File.Exists(Path.Combine(_helper.DirectoryPath, RelativeDataPath)) || _helper.Data.ReadSaveData<PlayerData>("midday-save") != null;
         }
 
         public void BeginSaveData()
         {
+            
             if (BeforeSave != null)
                 BeforeSave(this, EventArgs.Empty);
             foreach (var customSavingBegin in BeforeCustomSavingBegins)
                 customSavingBegin.Value();
             SaveAnywhere.Instance.cleanMonsters();
             var farm = Game1.getFarm();
-            if (farm.getShippingBin(Game1.player) != null)
-            {
-                Game1.activeClickableMenu = new NewShippingMenuV2(farm.getShippingBin(Game1.player));
-                farm.lastItemShipped = null;
-                _waitingToSave = true;
-            }
-            else
-            {
-                _currentSaveMenu = new NewSaveGameMenuV2();
-                _currentSaveMenu.SaveComplete += CurrentSaveMenu_SaveComplete;
-                Game1.activeClickableMenu = _currentSaveMenu;
-            }
-
             var drink = Game1.buffsDisplay.drink;
             BuffData drinkdata = null;
 
@@ -122,6 +110,18 @@ namespace SaveAnywhere.Framework
                 Position = GetPosition().ToArray(),
                 IsCharacterSwimming = Game1.player.swimming.Value
             });
+            
+                Game1.activeClickableMenu = new NewShippingMenuV2(farm.getShippingBin(Game1.player));
+                farm.lastItemShipped = null;
+                _waitingToSave = true;
+                
+                _currentSaveMenu = new NewSaveGameMenuV2();
+                _currentSaveMenu.SaveComplete += CurrentSaveMenu_SaveComplete;
+                Game1.activeClickableMenu = _currentSaveMenu;
+            
+
+            
+
             RemoveLegacyDataForThisPlayer();
         }
 
