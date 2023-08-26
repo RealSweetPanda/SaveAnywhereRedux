@@ -5,7 +5,7 @@ namespace SaveAnywhere.Framework
     public class SaveAnywhereApi
     {
         /// <summary>
-        /// Fires before save data starts writing
+        ///     Fires before save data starts writing
         /// </summary>
         public event EventHandler BeforeSave
         {
@@ -14,7 +14,7 @@ namespace SaveAnywhere.Framework
         }
 
         /// <summary>
-        /// Fires after saving is complete
+        ///     Fires after saving is complete
         /// </summary>
         public event EventHandler AfterSave
         {
@@ -23,7 +23,7 @@ namespace SaveAnywhere.Framework
         }
 
         /// <summary>
-        /// Fires if the game has loaded with a mid-day save
+        ///     Fires if the game has loaded with a mid-day save
         /// </summary>
         public event EventHandler AfterLoad
         {
@@ -32,7 +32,7 @@ namespace SaveAnywhere.Framework
         }
 
         /// <summary>
-        /// Add a function to be called before save data starts writing
+        ///     Add a function to be called before save data starts writing
         /// </summary>
         /// <param name="id">Any unique identifier</param>
         /// <param name="beforeSave">The function to be called</param>
@@ -42,7 +42,7 @@ namespace SaveAnywhere.Framework
         }
 
         /// <summary>
-        /// Remove a function from the list of functions to be called before save data starts writing
+        ///     Remove a function from the list of functions to be called before save data starts writing
         /// </summary>
         /// <param name="id">Any unique identifier</param>
         /// <param name="beforeSave">Not necessary</param>
@@ -52,7 +52,7 @@ namespace SaveAnywhere.Framework
         }
 
         /// <summary>
-        /// Add a function to be called after saving has completed
+        ///     Add a function to be called after saving has completed
         /// </summary>
         /// <param name="id">Any unique identifier</param>
         /// <param name="afterSave">The function to be called</param>
@@ -62,7 +62,7 @@ namespace SaveAnywhere.Framework
         }
 
         /// <summary>
-        /// Remove a function from the list of functions to be called after saving has completed
+        ///     Remove a function from the list of functions to be called after saving has completed
         /// </summary>
         /// <param name="id">Any unique identifier</param>
         /// <param name="afterSave">Not necessary</param>
@@ -72,7 +72,7 @@ namespace SaveAnywhere.Framework
         }
 
         /// <summary>
-        /// Add a function to be called if the player loads a save with mid-day save data
+        ///     Add a function to be called if the player loads a save with mid-day save data
         /// </summary>
         /// <param name="id">Any unique identifier</param>
         /// <param name="afterLoad">The function to be called</param>
@@ -82,7 +82,7 @@ namespace SaveAnywhere.Framework
         }
 
         /// <summary>
-        /// Remove a function from the list of functions to be called if the player loads a save with mid-day save data
+        ///     Remove a function from the list of functions to be called if the player loads a save with mid-day save data
         /// </summary>
         /// <param name="id">Any unique identifier</param>
         /// <param name="afterLoad">Not necessary</param>
