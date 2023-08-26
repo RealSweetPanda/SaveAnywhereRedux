@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Microsoft.Xna.Framework;
 using SaveAnywhere.Framework.Model;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Menus;
 using StardewValley.Objects;
@@ -38,7 +40,7 @@ namespace SaveAnywhere.Framework
 
         public event EventHandler AfterLoad;
 
-
+        
         public void Update()
         {
             if (!_waitingToSave || Game1.activeClickableMenu != null)
@@ -53,6 +55,7 @@ namespace SaveAnywhere.Framework
             _currentSaveMenu = null;
             SaveAnywhere.RestoreMonsters();
             Game1.getFarm().removeObject(new Vector2(-100, -100), false);
+            Game1.activeClickableMenu = new FTMCompMenu();
             AfterSave?.Invoke(this, EventArgs.Empty);
             foreach (var keyValuePair in AfterCustomSavingCompleted)
                 keyValuePair.Value?.Invoke();
