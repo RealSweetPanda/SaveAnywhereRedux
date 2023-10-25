@@ -58,7 +58,7 @@ namespace SaveAnywhere.Framework
         private float _weatherX;
 
 
-        public NewShippingMenuV2(IList<Item> items) : base(0, 0, Game1.viewport.Width, Game1.viewport.Height)
+        public NewShippingMenuV2(IList<Item> items) : base(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height)
         {
             Game1.player.team.endOfNightStatus.UpdateState("shipment");
             parseItems(items);
@@ -69,8 +69,8 @@ namespace SaveAnywhere.Framework
             _itemSlotWidth = 96;
             _itemAndPlusButtonWidth = _plusButtonWidth + _itemSlotWidth + 8;
             _totalWidth = _categoryLabelsWidth + _itemAndPlusButtonWidth;
-            _centerX = Game1.viewport.Width / 2;
-            _centerY = Game1.viewport.Height / 2;
+            _centerX = Game1.uiViewport.Width / 2;
+            _centerY = Game1.uiViewport.Height / 2;
             _hasFinished = false;
             _outro = false;
             var num = -1;
@@ -130,7 +130,7 @@ namespace SaveAnywhere.Framework
             _forwardButton = textureComponent3;
             if (Game1.dayOfMonth == 25 && Game1.currentSeason.Equals("winter"))
                 _animations.Add(new TemporaryAnimatedSprite("LooseSprites\\Cursors", new Rectangle(640, 800, 32, 16),
-                    80f, 2, 1000, new Vector2(Game1.viewport.Width, Game1.random.Next(0, 200)), false, false, 0.01f,
+                    80f, 2, 1000, new Vector2(Game1.uiViewport.Width, Game1.random.Next(0, 200)), false, false, 0.01f,
                     0.0f, Color.White, 4f, 0.0f, 0.0f, 0.0f, true)
                 {
                     motion = new Vector2(-4f, 0.0f),
@@ -148,8 +148,8 @@ namespace SaveAnywhere.Framework
 
         private void RepositionItems()
         {
-            _centerX = Game1.viewport.Width / 2;
-            _centerY = Game1.viewport.Height / 2;
+            _centerX = Game1.uiViewport.Width / 2;
+            _centerY = Game1.uiViewport.Height / 2;
             for (var index = 0; index < 6; ++index)
                 _categories[index].bounds = new Rectangle(_centerX + _totalWidth / 2 - _plusButtonWidth,
                     _centerY - 300 + index * 27 * 4, _plusButtonWidth, 44);
@@ -384,7 +384,7 @@ namespace SaveAnywhere.Framework
                 {
                     if (!Game1.wasRainingYesterday)
                     {
-                        var vector2 = new Vector2(Game1.viewport.Width, Game1.random.Next(200));
+                        var vector2 = new Vector2(Game1.uiViewport.Width, Game1.random.Next(200));
                         var rectangle = new Rectangle(640, 752, 16, 16);
                         var num5 = Game1.random.Next(1, 4);
                         if (Game1.random.NextDouble() < 0.001)
@@ -414,7 +414,7 @@ namespace SaveAnywhere.Framework
                         }
                         else if (Game1.random.NextDouble() < 0.0002)
                         {
-                            vector2 = new Vector2(Game1.viewport.Width, Game1.random.Next(4, 256));
+                            vector2 = new Vector2(Game1.uiViewport.Width, Game1.random.Next(4, 256));
                             _animations.Add(new TemporaryAnimatedSprite("", new Rectangle(0, 0, 1, 1), 9999f, 1, 10000,
                                 vector2, false, false, 0.01f, 0.0f,
                                 Color.White * (0.25f + (float)Game1.random.NextDouble()), 4f, 0.0f, 0.0f, 0.0f, true)
@@ -424,7 +424,7 @@ namespace SaveAnywhere.Framework
                         }
                         else if (Game1.random.NextDouble() < 5E-05)
                         {
-                            vector2 = new Vector2(Game1.viewport.Width, Game1.viewport.Height - 192);
+                            vector2 = new Vector2(Game1.uiViewport.Width, Game1.uiViewport.Height - 192);
                             for (var index = 0; index < num5; ++index)
                             {
                                 _animations.Add(new TemporaryAnimatedSprite("LooseSprites\\Cursors", rectangle,
@@ -468,7 +468,7 @@ namespace SaveAnywhere.Framework
                         _smokeTimer = 50;
                         _animations.Add(new TemporaryAnimatedSprite("LooseSprites\\Cursors",
                             new Rectangle(684, 1075, 1, 1), 1000f, 1, 1000,
-                            new Vector2(188f, Game1.viewport.Height - 128 + 20), false, false)
+                            new Vector2(188f, Game1.uiViewport.Height - 128 + 20), false, false)
                         {
                             color = Game1.wasRainingYesterday ? Color.SlateGray : Color.White,
                             scale = 4f,
@@ -634,7 +634,7 @@ namespace SaveAnywhere.Framework
                     int num;
                     if (Game1.dayOfMonth == 28 && _timesPokedMoon <= 10)
                     {
-                        var rectangle = new Rectangle(Game1.viewport.Width - 176, 4, 172, 172);
+                        var rectangle = new Rectangle(Game1.uiViewport.Width - 176, 4, 172, 172);
                         num = !rectangle.Contains(x, y) ? 1 : 0;
                     }
                     else
@@ -688,7 +688,7 @@ namespace SaveAnywhere.Framework
 
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
-            initialize(0, 0, Game1.viewport.Width, Game1.viewport.Height);
+            initialize(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height);
             RepositionItems();
         }
 
@@ -696,61 +696,61 @@ namespace SaveAnywhere.Framework
         {
             if (Game1.wasRainingYesterday)
             {
-                b.Draw(Game1.mouseCursors, new Rectangle(0, 0, Game1.viewport.Width, Game1.viewport.Height),
+                b.Draw(Game1.mouseCursors, new Rectangle(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height),
                     new Rectangle(639, 858, 1, 184),
                     Game1.currentSeason.Equals("winter")
                         ? Color.LightSlateGray
                         : Color.SlateGray * (float)(1.0 - _introTimer / 3500.0));
-                b.Draw(Game1.mouseCursors, new Rectangle(2556, 0, Game1.viewport.Width, Game1.viewport.Height),
+                b.Draw(Game1.mouseCursors, new Rectangle(2556, 0, Game1.uiViewport.Width, Game1.uiViewport.Height),
                     new Rectangle(639, 858, 1, 184),
                     Game1.currentSeason.Equals("winter")
                         ? Color.LightSlateGray
                         : Color.SlateGray * (float)(1.0 - _introTimer / 3500.0));
-                for (var index = -244; index < Game1.viewport.Width + 244; index += 244)
+                for (var index = -244; index < Game1.uiViewport.Width + 244; index += 244)
                     b.Draw(Game1.mouseCursors, new Vector2(index + (float)(_weatherX / 2.0 % 244.0), 32f),
                         new Rectangle(643, 1142, 61, 53),
                         Color.DarkSlateGray * 1f * (float)(1.0 - _introTimer / 3500.0), 0.0f, Vector2.Zero, 4f, 0, 1f);
-                b.Draw(Game1.mouseCursors, new Vector2(0.0f, Game1.viewport.Height - 192),
+                b.Draw(Game1.mouseCursors, new Vector2(0.0f, Game1.uiViewport.Height - 192),
                     new Rectangle(0, Game1.currentSeason.Equals("winter") ? 1034 : 737, 639, 48),
                     Game1.currentSeason.Equals("winter")
                         ? Color.White * 0.25f
                         : new Color(30, 62, 50) * (float)(0.5 - _introTimer / 3500.0), 0.0f, Vector2.Zero, 4f,
                     (SpriteEffects)1, 1f);
-                b.Draw(Game1.mouseCursors, new Vector2(2556f, Game1.viewport.Height - 192),
+                b.Draw(Game1.mouseCursors, new Vector2(2556f, Game1.uiViewport.Height - 192),
                     new Rectangle(0, Game1.currentSeason.Equals("winter") ? 1034 : 737, 639, 48),
                     Game1.currentSeason.Equals("winter")
                         ? Color.White * 0.25f
                         : new Color(30, 62, 50) * (float)(0.5 - _introTimer / 3500.0), 0.0f, Vector2.Zero, 4f,
                     (SpriteEffects)1, 1f);
-                b.Draw(Game1.mouseCursors, new Vector2(0.0f, Game1.viewport.Height - 128),
+                b.Draw(Game1.mouseCursors, new Vector2(0.0f, Game1.uiViewport.Height - 128),
                     new Rectangle(0, Game1.currentSeason.Equals("winter") ? 1034 : 737, 639, 32),
                     Game1.currentSeason.Equals("winter")
                         ? Color.White * 0.5f
                         : new Color(30, 62, 50) * (float)(1.0 - _introTimer / 3500.0), 0.0f, Vector2.Zero, 4f, 0, 1f);
-                b.Draw(Game1.mouseCursors, new Vector2(2556f, Game1.viewport.Height - 128),
+                b.Draw(Game1.mouseCursors, new Vector2(2556f, Game1.uiViewport.Height - 128),
                     new Rectangle(0, Game1.currentSeason.Equals("winter") ? 1034 : 737, 639, 32),
                     Game1.currentSeason.Equals("winter")
                         ? Color.White * 0.5f
                         : new Color(30, 62, 50) * (float)(1.0 - _introTimer / 3500.0), 0.0f, Vector2.Zero, 4f, 0, 1f);
-                b.Draw(Game1.mouseCursors, new Vector2(160f, Game1.viewport.Height - 128 + 16 + 8),
+                b.Draw(Game1.mouseCursors, new Vector2(160f, Game1.uiViewport.Height - 128 + 16 + 8),
                     new Rectangle(653, 880, 10, 10), Color.White * (float)(1.0 - _introTimer / 3500.0), 0.0f,
                     Vector2.Zero, 4f, 0, 1f);
-                for (var index = -244; index < Game1.viewport.Width + 244; index += 244)
+                for (var index = -244; index < Game1.uiViewport.Width + 244; index += 244)
                     b.Draw(Game1.mouseCursors, new Vector2(index + _weatherX % 244f, -32f),
                         new Rectangle(643, 1142, 61, 53), Color.SlateGray * 0.85f * (float)(1.0 - _introTimer / 3500.0),
                         0.0f, Vector2.Zero, 4f, 0, 0.9f);
                 foreach (var animation in _animations)
                     animation.draw(b, true);
-                for (var index = -244; index < Game1.viewport.Width + 244; index += 244)
+                for (var index = -244; index < Game1.uiViewport.Width + 244; index += 244)
                     b.Draw(Game1.mouseCursors, new Vector2(index + (float)(_weatherX * 1.5 % 244.0), sbyte.MinValue),
                         new Rectangle(643, 1142, 61, 53), Color.LightSlateGray * (float)(1.0 - _introTimer / 3500.0),
                         0.0f, Vector2.Zero, 4f, 0, 0.9f);
             }
             else
             {
-                b.Draw(Game1.mouseCursors, new Rectangle(0, 0, Game1.viewport.Width, Game1.viewport.Height),
+                b.Draw(Game1.mouseCursors, new Rectangle(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height),
                     new Rectangle(639, 858, 1, 184), Color.White * (float)(1.0 - _introTimer / 3500.0));
-                b.Draw(Game1.mouseCursors, new Rectangle(2556, 0, Game1.viewport.Width, Game1.viewport.Height),
+                b.Draw(Game1.mouseCursors, new Rectangle(2556, 0, Game1.uiViewport.Width, Game1.uiViewport.Height),
                     new Rectangle(639, 858, 1, 184), Color.White * (float)(1.0 - _introTimer / 3500.0));
                 b.Draw(Game1.mouseCursors, new Vector2(0.0f, 0.0f), new Rectangle(0, 1453, 639, 195),
                     Color.White * (float)(1.0 - _introTimer / 3500.0), 0.0f, Vector2.Zero, 4f, 0, 1f);
@@ -759,7 +759,7 @@ namespace SaveAnywhere.Framework
                 if (Game1.dayOfMonth == 28)
                 {
                     b.Draw(Game1.mouseCursors,
-                        new Vector2(Game1.viewport.Width - 176, 4f) + (_moonShake > 0
+                        new Vector2(Game1.uiViewport.Width - 176, 4f) + (_moonShake > 0
                             ? new Vector2(Game1.random.Next(-1, 2), Game1.random.Next(-1, 2))
                             : Vector2.Zero), new Rectangle(642, 835, 43, 43),
                         Color.White * (float)(1.0 - _introTimer / 3500.0), 0.0f, Vector2.Zero, 4f, 0, 1f);
@@ -767,7 +767,7 @@ namespace SaveAnywhere.Framework
                     {
                         var spriteBatch = b;
                         var mouseCursors = Game1.mouseCursors;
-                        var vector2 = new Vector2(Game1.viewport.Width - 136, 48f) + (_moonShake > 0
+                        var vector2 = new Vector2(Game1.uiViewport.Width - 136, 48f) + (_moonShake > 0
                             ? new Vector2(Game1.random.Next(-1, 2), Game1.random.Next(-1, 2))
                             : Vector2.Zero);
                         int num;
@@ -795,29 +795,29 @@ namespace SaveAnywhere.Framework
                     }
                 }
 
-                b.Draw(Game1.mouseCursors, new Vector2(0.0f, Game1.viewport.Height - 192),
+                b.Draw(Game1.mouseCursors, new Vector2(0.0f, Game1.uiViewport.Height - 192),
                     new Rectangle(0, Game1.currentSeason.Equals("winter") ? 1034 : 737, 639, 48),
                     Game1.currentSeason.Equals("winter")
                         ? Color.White * 0.25f
                         : new Color(0, 20, 40) * (float)(0.649999976158142 - _introTimer / 3500.0), 0.0f, Vector2.Zero,
                     4f, (SpriteEffects)1, 1f);
-                b.Draw(Game1.mouseCursors, new Vector2(2556f, Game1.viewport.Height - 192),
+                b.Draw(Game1.mouseCursors, new Vector2(2556f, Game1.uiViewport.Height - 192),
                     new Rectangle(0, Game1.currentSeason.Equals("winter") ? 1034 : 737, 639, 48),
                     Game1.currentSeason.Equals("winter")
                         ? Color.White * 0.25f
                         : new Color(0, 20, 40) * (float)(0.649999976158142 - _introTimer / 3500.0), 0.0f, Vector2.Zero,
                     4f, (SpriteEffects)1, 1f);
-                b.Draw(Game1.mouseCursors, new Vector2(0.0f, Game1.viewport.Height - 128),
+                b.Draw(Game1.mouseCursors, new Vector2(0.0f, Game1.uiViewport.Height - 128),
                     new Rectangle(0, Game1.currentSeason.Equals("winter") ? 1034 : 737, 639, 32),
                     Game1.currentSeason.Equals("winter")
                         ? Color.White * 0.5f
                         : new Color(0, 32, 20) * (float)(1.0 - _introTimer / 3500.0), 0.0f, Vector2.Zero, 4f, 0, 1f);
-                b.Draw(Game1.mouseCursors, new Vector2(2556f, Game1.viewport.Height - 128),
+                b.Draw(Game1.mouseCursors, new Vector2(2556f, Game1.uiViewport.Height - 128),
                     new Rectangle(0, Game1.currentSeason.Equals("winter") ? 1034 : 737, 639, 32),
                     Game1.currentSeason.Equals("winter")
                         ? Color.White * 0.5f
                         : new Color(0, 32, 20) * (float)(1.0 - _introTimer / 3500.0), 0.0f, Vector2.Zero, 4f, 0, 1f);
-                b.Draw(Game1.mouseCursors, new Vector2(160f, Game1.viewport.Height - 128 + 16 + 8),
+                b.Draw(Game1.mouseCursors, new Vector2(160f, Game1.uiViewport.Height - 128 + 16 + 8),
                     new Rectangle(653, 880, 10, 10), Color.White * (float)(1.0 - _introTimer / 3500.0), 0.0f,
                     Vector2.Zero, 4f, 0, 1f);
             }
@@ -829,7 +829,7 @@ namespace SaveAnywhere.Framework
             {
                 var num1 = _categories[0].bounds.Y - 128;
                 if (num1 >= 0)
-                    SpriteText.drawStringWithScrollCenteredAt(b, Utility.getDateString(), Game1.viewport.Width / 2,
+                    SpriteText.drawStringWithScrollCenteredAt(b, Utility.getDateString(), Game1.uiViewport.Width / 2,
                         num1);
                 var num2 = -20;
                 var index1 = 0;
@@ -870,7 +870,7 @@ namespace SaveAnywhere.Framework
             }
             else
             {
-                drawTextureBox(b, 0, 0, Game1.viewport.Width, Game1.viewport.Height, Color.White);
+                drawTextureBox(b, 0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height, Color.White);
                 var vector2 = new Vector2(xPositionOnScreen + 32, yPositionOnScreen + 32);
                 for (var index = _currentTab * _itemsPerCategoryPage;
                      index < _currentTab * _itemsPerCategoryPage + _itemsPerCategoryPage;
@@ -997,15 +997,15 @@ namespace SaveAnywhere.Framework
 
             if (_outro)
             {
-                b.Draw(Game1.mouseCursors, new Rectangle(0, 0, Game1.viewport.Width, Game1.viewport.Height),
+                b.Draw(Game1.mouseCursors, new Rectangle(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height),
                     new Rectangle(639, 858, 1, 184), Color.Black * (1F - _outroFadeTimer / 800F));
                 SpriteText.drawStringWithScrollCenteredAt(b,
-                    Utility.getDateString(), Game1.viewport.Width / 2,
+                    Utility.getDateString(), Game1.uiViewport.Width / 2,
                     _dayPlaqueY);
                 foreach (var animation in _animations)
                     animation.draw(b, true);
                 if (_finalOutroTimer > 0 || _hasFinished)
-                    b.Draw(Game1.staminaRect, new Rectangle(0, 0, Game1.viewport.Width, Game1.viewport.Height),
+                    b.Draw(Game1.staminaRect, new Rectangle(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height),
                         new Rectangle(0, 0, 1, 1), Color.Black * (1F - _finalOutroTimer * 0.0005F));
             }
 

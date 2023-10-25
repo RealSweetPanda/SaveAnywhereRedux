@@ -1,10 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using HarmonyLib;
 using SaveAnywhere.Framework;
+using Sickhead.Engine.Util;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Characters;
+using StardewValley.Menus;
 using StardewValley.Monsters;
 
 namespace SaveAnywhere
@@ -27,8 +30,12 @@ namespace SaveAnywhere
             helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
             helper.Events.GameLoop.DayEnding += OnDayEnded;
             helper.Events.Input.ButtonPressed += OnButtonPressed;
-            helper.Events.GameLoop.Saved += SaveManager.SaveComplete;
             Helper.Events.GameLoop.GameLaunched += BuildConfigMenu;
+            var harmony = new Harmony(ModManifest.UniqueID);
+            harmony.Patch(
+                original: AccessTools.Method(typeof(SaveGameMenu), nameof(SaveGameMenu.complete)),
+                postfix: new HarmonyMethod(typeof(SaveManager), nameof(SaveManager.complete_Postfix))
+            );
             Instance = this;
         }
 
@@ -92,12 +99,12 @@ namespace SaveAnywhere
             }
         }
 
-        public static void RestoreMonsters()
+        public void RestoreMonsters()
         {
-            foreach (var monster1 in Instance._monsters)
+            foreach (var monster1 in _monsters)
             foreach (var monster2 in monster1.Value)
                 monster1.Key.addCharacter(monster2);
-            Instance._monsters.Clear();
+            _monsters.Clear();
         }
 
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
