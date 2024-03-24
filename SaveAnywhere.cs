@@ -1,14 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using HarmonyLib;
 using SaveAnywhere.Framework;
-using Sickhead.Engine.Util;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Characters;
-using StardewValley.Menus;
+using StardewValley.Locations;
 using StardewValley.Monsters;
+using StardewValley.Network;
 
 namespace SaveAnywhere
 {
@@ -31,11 +30,9 @@ namespace SaveAnywhere
             helper.Events.GameLoop.DayEnding += OnDayEnded;
             helper.Events.Input.ButtonPressed += OnButtonPressed;
             Helper.Events.GameLoop.GameLaunched += BuildConfigMenu;
-            var harmony = new Harmony(ModManifest.UniqueID);
-            harmony.Patch(
-                original: AccessTools.Method(typeof(SaveGameMenu), nameof(SaveGameMenu.complete)),
-                postfix: new HarmonyMethod(typeof(SaveManager), nameof(SaveManager.complete_Postfix))
-            );
+            Helper.Events.GameLoop.Saved += SaveManager.RunAfterSave;
+            
+            
             Instance = this;
         }
 
@@ -86,6 +83,12 @@ namespace SaveAnywhere
             _monsters = new Dictionary<GameLocation, List<Monster>>();
             foreach (var location in Game1.locations)
             {
+                if (location is Forest)
+                {
+                    if (!(Game1.year <= 2 || location.getCharacterFromName("TrashBear") == null ||
+                         !NetWorldState.checkAnywhereForWorldStateID("trashBearDone")))
+                        location.characters.Remove(location.getCharacterFromName("TrashBear"));
+                }
                 _monsters.Add(location, new List<Monster>());
                 foreach (var character in location.characters)
                     if (character is Monster monster)
@@ -97,6 +100,8 @@ namespace SaveAnywhere
                 foreach (var monster in _monsters[location])
                     location.characters.Remove(monster);
             }
+            
+            
         }
 
         public void RestoreMonsters()
@@ -104,6 +109,10 @@ namespace SaveAnywhere
             foreach (var monster1 in _monsters)
             foreach (var monster2 in monster1.Value)
                 monster1.Key.addCharacter(monster2);
+            var forest = Utility.fuzzyLocationSearch("Forest");
+            if (Game1.year <= 2 || Game1.isRaining || Utility.isFestivalDay(Game1.dayOfMonth, Game1.season) || forest.getCharacterFromName("TrashBear") != null || NetWorldState.checkAnywhereForWorldStateID("trashBearDone"))
+                return;
+            forest.characters.Add( new TrashBear());
             _monsters.Clear();
         }
 
@@ -113,7 +122,7 @@ namespace SaveAnywhere
                 return;
             if (Game1.client == null)
             {
-                if (Game1.player.currentLocation.getCharacters().Any(x => x is Junimo))
+                if (Game1.player.currentLocation.characters.Any(x => x is Junimo))
                     Game1.addHUDMessage(new HUDMessage("The spirits don't want you to save here.", 3));
                 else
                     SaveManager.BeginSaveData();
