@@ -23,6 +23,7 @@ namespace SaveAnywhere.Framework
         private static SaveGameMenu _currentSaveMenu;
         private bool _waitingToSave;
         private static bool _middaysaving;
+        private bool _sawSaveInProgress;
 
         public bool IsSaving => _waitingToSave || _middaysaving;
 
@@ -46,6 +47,27 @@ namespace SaveAnywhere.Framework
 
         public void Update()
         {
+            // SaveGameMenu holds a ~1.5s "has been saved" sparkle-text animation
+            // after the actual file write finishes — it's vanilla's end-of-night
+            // screen, and looks like a full day transition even though the clock
+            // never advances for a mid-day save. The real write is done the moment
+            // Game1.game1.IsSaving flips back to false (SaveGameMenu sets that
+            // itself); at that point we set its public `quit` flag early — the
+            // same externally-settable field vanilla itself uses to close the menu
+            // when a client times out — so its own update() closes it on the very
+            // next tick instead of waiting out the decorative hold. This doesn't
+            // touch the actual save/cleanup logic at all, just skips the wait.
+            if (_currentSaveMenu != null)
+            {
+                if (Game1.game1.IsSaving)
+                    _sawSaveInProgress = true;
+                else if (_sawSaveInProgress)
+                {
+                    _sawSaveInProgress = false;
+                    _currentSaveMenu.quit = true;
+                }
+            }
+
             if (!_waitingToSave || Game1.activeClickableMenu != null)
                 return;
             Game1.newDaySync = new NewDaySynchronizer();
@@ -66,6 +88,7 @@ namespace SaveAnywhere.Framework
         {
             SaveComplete -= CurrentSaveMenu_SaveComplete;
             _currentSaveMenu = null;
+            _sawSaveInProgress = false;
             SaveAnywhere.Instance.RestoreMonsters();
             AfterSave?.Invoke(this, EventArgs.Empty);
             foreach (var keyValuePair in AfterCustomSavingCompleted)
@@ -453,58 +476,106 @@ namespace SaveAnywhere.Framework
 
         private static DebrisData[] GetDebris()
         {
-            try
+            var log = SaveAnywhere.Instance.Monitor;
+            var list = new List<DebrisData>();
+
+            // Game1.locations alone does NOT include building interiors (farmhouse,
+            // sheds, coops, barns, cabins, etc.) — those are nested under each
+            // Building's own .indoors, which is exactly why Utility.ForEachLocation
+            // exists (includeInteriors: true walks them too). Iterating Game1.locations
+            // directly here silently missed every debris dropped indoors.
+            // includeGenerated also covers a currently-active mine/volcano floor.
+            Utility.ForEachLocation(delegate(GameLocation location)
             {
-                var list = new List<DebrisData>();
-                foreach (var location in Game1.locations)
+                try
                 {
                     var mapName = !string.IsNullOrEmpty(location.uniqueName.Value)
                         ? location.uniqueName.Value : location.Name;
 
                     foreach (var d in location.debris)
                     {
-                        if (d?.item == null) continue;
-                        if (d.debrisType.Value != Debris.DebrisType.OBJECT
-                            && d.debrisType.Value != Debris.DebrisType.ARCHAEOLOGY) continue;
+                        try
+                        {
+                            if (d?.item == null) continue;
+                            if (d.debrisType.Value != Debris.DebrisType.OBJECT
+                                && d.debrisType.Value != Debris.DebrisType.ARCHAEOLOGY) continue;
 
-                        var chunk = d.Chunks.FirstOrDefault();
-                        if (chunk == null) continue;
-                        var tile = chunk.position.Value / 64f;
+                            var chunk = d.Chunks.FirstOrDefault();
+                            if (chunk == null) continue;
+                            var tile = chunk.position.Value / 64f;
 
-                        int quality = (d.item as StardewValley.Object)?.Quality ?? 0;
-                        list.Add(new DebrisData(mapName, (int)tile.X, (int)tile.Y,
-                            d.item.QualifiedItemId, d.item.Stack, quality));
+                            int quality = (d.item as StardewValley.Object)?.Quality ?? 0;
+                            list.Add(new DebrisData(mapName, (int)tile.X, (int)tile.Y,
+                                d.item.QualifiedItemId, d.item.Stack, quality));
+                        }
+                        catch (Exception ex)
+                        {
+                            // One bad debris item shouldn't cost every other item on
+                            // the ground; skip just this one and keep going.
+                            log.Log($"[SA] Skipped one debris item in {mapName}: {ex.Message}", LogLevel.Trace);
+                        }
                     }
                 }
-                return list.ToArray();
-            }
-            catch
-            {
-                return Array.Empty<DebrisData>();
-            }
+                catch (Exception ex)
+                {
+                    log.Log($"[SA] Skipped location {location?.Name} while scanning debris: {ex.Message}", LogLevel.Trace);
+                }
+                return true; // keep iterating remaining locations
+            }, includeInteriors: true, includeGenerated: true);
+
+            log.Log($"[SA] Captured {list.Count} debris item(s) for mid-day save", LogLevel.Trace);
+            return list.ToArray();
         }
 
         private static void RestoreDebris(DebrisData[] debrisDatas)
         {
-            if (debrisDatas == null) return;
-            try
+            if (debrisDatas == null || debrisDatas.Length == 0) return;
+            var log = SaveAnywhere.Instance.Monitor;
+
+            // Game1.getLocationFromName(name) alone doesn't reliably resolve building
+            // interiors (same gap as GetDebris reading Game1.locations directly), so
+            // build the lookup the same way the data was captured — via
+            // Utility.ForEachLocation — to guarantee symmetry between save and load.
+            var byName = new Dictionary<string, GameLocation>();
+            Utility.ForEachLocation(delegate(GameLocation location)
             {
-                foreach (var dd in debrisDatas)
+                var name = !string.IsNullOrEmpty(location.uniqueName.Value)
+                    ? location.uniqueName.Value : location.Name;
+                if (!string.IsNullOrEmpty(name))
+                    byName[name] = location;
+                return true;
+            }, includeInteriors: true, includeGenerated: true);
+
+            int restored = 0;
+            foreach (var dd in debrisDatas)
+            {
+                try
                 {
-                    var location = Game1.getLocationFromName(dd.Map);
-                    if (location == null) continue; // stale/invalid modded location
+                    if (!byName.TryGetValue(dd.Map, out var location))
+                    {
+                        log.Log($"[SA] Debris location '{dd.Map}' not found on load; skipping {dd.QualifiedItemId}", LogLevel.Trace);
+                        continue;
+                    }
 
                     var item = ItemRegistry.Create(dd.QualifiedItemId, dd.Stack, dd.Quality, allowNull: true);
-                    if (item == null) continue; // removed/invalid item id
+                    if (item == null)
+                    {
+                        log.Log($"[SA] Debris item '{dd.QualifiedItemId}' no longer exists; skipping", LogLevel.Trace);
+                        continue;
+                    }
 
                     var origin = new Vector2(dd.X * 64f + 32f, dd.Y * 64f + 32f);
                     location.debris.Add(new Debris(item, origin));
+                    restored++;
+                }
+                catch (Exception ex)
+                {
+                    // One bad entry shouldn't cost every other item; skip just this one.
+                    log.Log($"[SA] Exception restoring debris '{dd.QualifiedItemId}': {ex.Message}", LogLevel.Trace);
                 }
             }
-            catch
-            {
-                // Debris restore is best-effort; don't crash the load.
-            }
+
+            log.Log($"[SA] Restored {restored}/{debrisDatas.Length} debris item(s) after mid-day load", LogLevel.Trace);
         }
 
 
