@@ -24,6 +24,7 @@ namespace SaveAnywhere.Framework
         private bool _waitingToSave;
         private static bool _middaysaving;
 
+        public bool IsSaving => _waitingToSave || _middaysaving;
 
         public SaveManager(IModHelper helper, Action onLoaded)
         {
@@ -49,7 +50,12 @@ namespace SaveAnywhere.Framework
                 return;
             Game1.newDaySync = new NewDaySynchronizer();
             Game1.newDaySync.start();
-            Game1.weatherForTomorrow = Game1.getWeatherModificationsForDate(Game1.Date, Game1.weatherForTomorrow);
+            // NOTE: do NOT touch Game1.weatherForTomorrow here. It was already rolled
+            // by last night's real day transition; getWeatherModificationsForDate is
+            // only valid during that transition (when Date is the day being entered).
+            // Calling it with today's date forced tomorrow to Sun on the 1st of a
+            // month / early game (deleting rain forecasts) and to "Festival" on
+            // festival days.
             _currentSaveMenu = new SaveGameMenu();
             SaveComplete += CurrentSaveMenu_SaveComplete;
             Game1.activeClickableMenu = _currentSaveMenu;
@@ -83,6 +89,8 @@ namespace SaveAnywhere.Framework
 
         public void BeginSaveData()
         {
+            if (IsSaving) return; // guard re-entrancy
+
             BeforeSave?.Invoke(this, EventArgs.Empty);
             foreach (var customSavingBegin in BeforeCustomSavingBegins)
                 customSavingBegin.Value?.Invoke();
@@ -112,7 +120,8 @@ namespace SaveAnywhere.Framework
                 DrinkBuff = drinkdata,
                 FoodBuff = fooddata,
                 Position = GetPosition().ToArray(),
-                IsCharacterSwimming = Game1.player.swimming.Value
+                IsCharacterSwimming = Game1.player.swimming.Value,
+                Debris = GetDebris()
             });
             var tempShippingBin = new Chest(true, new Vector2(-100, -100));
             foreach (var item in farm.getShippingBin(Game1.player))
@@ -139,21 +148,30 @@ namespace SaveAnywhere.Framework
             var data = _helper.Data.ReadSaveData<PlayerData>("midday-save") ??
                        _helper.Data.ReadJsonFile<PlayerData>(RelativeDataPath);
             if (data == null)
-                ClearData();
-
-
-            foreach (var item in (Game1.getFarm().getObjectAtTile(-100, -100) as Chest).Items)
             {
-                if (item.modData["farmerSelling"] == Game1.player.UniqueMultiplayerID.ToString())
-                {
-                    if (item.modData["last"] == "true")
-                        Game1.getFarm().lastItemShipped = item;
-                    Game1.getFarm().getShippingBin(Game1.player).Add(item);
-                }
+                ClearData();
+                return;
             }
 
-            Game1.getFarm().removeObject(new Vector2(-100, -100), false);
+            // Restore the shipping bin from the temp chest (if it survived the save).
+            var tempShippingBin = Game1.getFarm().getObjectAtTile(-100, -100) as Chest;
+            if (tempShippingBin != null)
+            {
+                foreach (var item in tempShippingBin.Items)
+                {
+                    if (item == null) continue;
+                    if (item.modData["farmerSelling"] == Game1.player.UniqueMultiplayerID.ToString())
+                    {
+                        if (item.modData["last"] == "true")
+                            Game1.getFarm().lastItemShipped = item;
+                        Game1.getFarm().getShippingBin(Game1.player).Add(item);
+                    }
+                }
+                Game1.getFarm().removeObject(new Vector2(-100, -100), false);
+            }
+
             SetPositions(data.Position, data.Time);
+            RestoreDebris(data.Debris);
             // if (data.OtherBuffs != null)
             // foreach (var buff in data.OtherBuffs)
             // {
@@ -260,54 +278,233 @@ namespace SaveAnywhere.Framework
             int facingDirection1 = player.FacingDirection;
             yield return new PositionData(name1, map1, tile1.X, tile1.Y, facingDirection1);
 
-            foreach (var allCharacter in Utility.getAllCharacters())
-                yield return new PositionData(allCharacter.Name, allCharacter.currentLocation.Name,
-                    allCharacter.TilePoint.X, allCharacter.TilePoint.Y,
-                    allCharacter.FacingDirection);
+            foreach (var npc in Utility.getAllCharacters())
+            {
+                if (npc?.currentLocation == null) continue;
+                // The game parks some hidden NPCs off-map (e.g. Marlon at -42,-42);
+                // don't record or restore those.
+                if (npc.TilePoint.X < 0 || npc.TilePoint.Y < 0) continue;
+
+                var npcMap = npc.currentLocation.uniqueName.Value;
+                if (string.IsNullOrEmpty(npcMap))
+                    npcMap = npc.currentLocation.Name;
+
+                yield return new PositionData(npc.Name, npcMap,
+                    npc.TilePoint.X, npc.TilePoint.Y, npc.FacingDirection);
+            }
         }
 
         private void SetPositions(PositionData[] position, int time)
         {
-            Game1.player.faceDirection(position[0].FacingDirection);
+            if (position == null || position.Length == 0) return;
 
-            Game1.fadeScreenToBlack();
-            Game1.warpFarmer(position[0].Map, position[0].X, position[0].Y, false);
+            var log = SaveAnywhere.Instance.Monitor;
+
+            // Restore player first (warpFarmer handles its own screen transition).
+            var playerPos = position[0];
+            int px = playerPos.X, py = playerPos.Y;
+
+            // Mine/Volcano Dungeon levels are never part of the save file (they
+            // live only in a runtime cache, never added to Game1.locations), so
+            // reloading into one always regenerates a brand-new random layout.
+            // The saved tile can be solid rock in the new layout. Resolve the
+            // target location BEFORE warping (warpFarmer's location change is
+            // applied on a later tick, so currentLocation can't be trusted right
+            // after the call) and nudge to the nearest open tile if needed — the
+            // same tool the game itself uses to recover a stale mail/warp target.
+            // Short-circuits instantly when the saved tile is already open, so
+            // it's cheap to run unconditionally, not just for regenerated levels.
+            var targetLoc = Game1.getLocationFromName(playerPos.Map);
+            if (targetLoc != null)
+            {
+                var open = Utility.recursiveFindOpenTileForCharacter(
+                    Game1.player, targetLoc, new Vector2(px, py), 20, allowOffMap: false);
+                if (open != Vector2.Zero)
+                {
+                    px = (int)open.X;
+                    py = (int)open.Y;
+                }
+                else
+                {
+                    log.Log($"[SA] No open tile near ({playerPos.X},{playerPos.Y}) in {playerPos.Map}; using saved tile",
+                            LogLevel.Warn);
+                }
+            }
+
+            Game1.warpFarmer(playerPos.Map, px, py, playerPos.FacingDirection);
+
+            // Restore each villager's saved tile and clear stale movement state from
+            // the vanilla morning load BEFORE the clock moves. checkSchedule() runs on
+            // every 10-minute tick and fires the day's precomputed routes; those route
+            // points assume the NPC walked there from its morning position, and an NPC
+            // standing anywhere else beelines to the first point straight through
+            // walls (PathFindController does no collision checks). ignoreScheduleToday
+            // makes checkSchedule a no-op while SafelySetTime fast-forwards.
+            var restored = new List<NPC>();
+            foreach (var npc in Utility.getAllCharacters())
+            {
+                var pos = position.FirstOrDefault(p => p.Name == npc.Name);
+                if (pos == null) continue;
+
+                try
+                {
+                    Game1.warpCharacter(npc, pos.Map, new Point(pos.X, pos.Y));
+                    npc.faceDirection(pos.FacingDirection);
+
+                    if (!npc.IsVillager) continue;
+
+                    npc.Halt();
+                    npc.controller = null;
+                    npc.temporaryController = null;
+                    npc.queuedSchedulePaths?.Clear();
+                    npc.ignoreScheduleToday = true;
+                    restored.Add(npc);
+                }
+                catch (Exception ex)
+                {
+                    log.Log($"[SA] Exception restoring {npc?.Name}: {ex.Message}", LogLevel.Error);
+                }
+            }
+
+            // Advance the clock; lights, music and location state update naturally
+            // while villager schedules stay suppressed.
             SafelySetTime(time);
 
-            foreach (var allCharacter in Utility.getAllCharacters())
+            // Give each villager a route to its CURRENT schedule destination computed
+            // fresh from the tile it actually stands on (collision-valid and cross-map,
+            // same pathfinding the engine uses when parsing schedules), then let
+            // checkSchedule() take over as if the route were the engine's own.
+            foreach (var npc in restored)
             {
-                var pos = position.FirstOrDefault(p => p.Name == allCharacter.Name);
-                if (pos == null) continue;
-                Game1.warpCharacter(allCharacter, pos.Map, new Point(pos.X, pos.Y));
-                allCharacter.faceDirection(pos.FacingDirection);
-                if (!allCharacter.IsVillager) continue;
-                allCharacter.TryLoadSchedule();
-                if (allCharacter.Schedule == null) continue;
-                var dest = allCharacter.Schedule
-                    .OrderBy(pair => pair.Key).LastOrDefault(data => data.Key < time);
+                try
+                {
+                    npc.ignoreScheduleToday = false;
+                    npc.followSchedule = true;
+                    if (npc.Schedule == null) continue;
 
-                if (dest.Key == 0) continue;
-                var endingLocation = dest.Value.targetLocationName;
-                allCharacter.Schedule.Remove(dest.Key);
-                    
-                var schedule = allCharacter.pathfindToNextScheduleLocation(
-                    allCharacter.ScheduleKey, pos.Map, pos.X, pos.Y,
-                    endingLocation,
-                    dest.Value.targetTile.X,
-                    dest.Value.targetTile.Y,
-                    dest.Value.facingDirection,
-                    dest.Value.endOfRouteBehavior,
-                    dest.Value.endOfRouteMessage);
+                    // Last schedule entry that should have started by savedTime.
+                    int lastPassed = 0;
+                    foreach (var k in npc.Schedule.Keys.OrderBy(x => x))
+                    {
+                        if (k > time) break;
+                        lastPassed = k;
+                    }
 
-                allCharacter.update(Game1.currentGameTime, Utility.getGameLocationOfCharacter(allCharacter));
-                allCharacter.Schedule.TryAdd(time, schedule);
-                if (allCharacter.doingEndOfRouteAnimation.Value || allCharacter.controller == null)
-                    continue;
-                allCharacter.controller.pathToEndPoint = schedule.route;
-                allCharacter.controller.update(Game1.currentGameTime);
+                    // Past entries are handled below; stop the engine replaying them.
+                    npc.lastAttemptedSchedule = time;
+
+                    if (lastPassed == 0) continue; // schedule hasn't started yet today
+
+                    var seg = npc.Schedule[lastPassed];
+
+                    // Destination = the segment's target tile; fall back to the canned
+                    // route's final point (targetTile can be left at -1,-1).
+                    Point dest = seg.targetTile;
+                    if (dest.X <= 0 && dest.Y <= 0 && seg.route != null && seg.route.Count > 0)
+                        dest = seg.route.Last();
+                    if (dest.X <= 0 && dest.Y <= 0) continue;
+
+                    bool atDest = npc.currentLocation?.Name == seg.targetLocationName
+                                  && npc.TilePoint.X == dest.X && npc.TilePoint.Y == dest.Y;
+
+                    var fresh = npc.pathfindToNextScheduleLocation(
+                        npc.ScheduleKey,
+                        npc.currentLocation.Name, npc.TilePoint.X, npc.TilePoint.Y,
+                        seg.targetLocationName, dest.X, dest.Y,
+                        seg.facingDirection, seg.endOfRouteBehavior, seg.endOfRouteMessage);
+                    fresh.time = lastPassed;
+
+                    if (!atDest && (fresh.route == null || fresh.route.Count == 0))
+                    {
+                        // No walkable route from here (unreachable interior, missing
+                        // warp path): snap to the destination so the NEXT schedule
+                        // entry starts from the tile its canned route expects.
+                        Game1.warpCharacter(npc, seg.targetLocationName, new Point(dest.X, dest.Y));
+                        npc.faceDirection(seg.facingDirection);
+                        npc.previousEndPoint = dest;
+                        continue;
+                    }
+
+                    // Queue it and fire through the engine so endOfRouteBehavior,
+                    // previousEndPoint and facing are wired exactly like a normal
+                    // schedule move. An empty route (already at destination) makes
+                    // checkSchedule run the end-of-route behavior immediately.
+                    npc.queuedSchedulePaths?.Clear();
+                    npc.queuedSchedulePaths?.Add(fresh);
+                    npc.checkSchedule(Game1.timeOfDay);
+                }
+                catch (Exception ex)
+                {
+                    log.Log($"[SA] Exception scheduling {npc?.Name}: {ex.Message}", LogLevel.Error);
+                }
             }
 
             Utility.fixAllAnimals();
+        }
+
+        // ── Dropped items ────────────────────────────────────────────────────
+        // GameLocation.debris is intentionally excluded from the vanilla save
+        // (normal saves only happen after the ground is already clear at
+        // night), so a mid-day save loses anything not yet picked up. Only
+        // single-item drops (a real Item, not a loose resource chunk from a
+        // tool swing — those are re-swingable, not worth the complexity of
+        // modeling per-chunk physics) are preserved here and respawned on
+        // load via the game's own item factory.
+
+        private static DebrisData[] GetDebris()
+        {
+            try
+            {
+                var list = new List<DebrisData>();
+                foreach (var location in Game1.locations)
+                {
+                    var mapName = !string.IsNullOrEmpty(location.uniqueName.Value)
+                        ? location.uniqueName.Value : location.Name;
+
+                    foreach (var d in location.debris)
+                    {
+                        if (d?.item == null) continue;
+                        if (d.debrisType.Value != Debris.DebrisType.OBJECT
+                            && d.debrisType.Value != Debris.DebrisType.ARCHAEOLOGY) continue;
+
+                        var chunk = d.Chunks.FirstOrDefault();
+                        if (chunk == null) continue;
+                        var tile = chunk.position.Value / 64f;
+
+                        int quality = (d.item as StardewValley.Object)?.Quality ?? 0;
+                        list.Add(new DebrisData(mapName, (int)tile.X, (int)tile.Y,
+                            d.item.QualifiedItemId, d.item.Stack, quality));
+                    }
+                }
+                return list.ToArray();
+            }
+            catch
+            {
+                return Array.Empty<DebrisData>();
+            }
+        }
+
+        private static void RestoreDebris(DebrisData[] debrisDatas)
+        {
+            if (debrisDatas == null) return;
+            try
+            {
+                foreach (var dd in debrisDatas)
+                {
+                    var location = Game1.getLocationFromName(dd.Map);
+                    if (location == null) continue; // stale/invalid modded location
+
+                    var item = ItemRegistry.Create(dd.QualifiedItemId, dd.Stack, dd.Quality, allowNull: true);
+                    if (item == null) continue; // removed/invalid item id
+
+                    var origin = new Vector2(dd.X * 64f + 32f, dd.Y * 64f + 32f);
+                    location.debris.Add(new Debris(item, origin));
+                }
+            }
+            catch
+            {
+                // Debris restore is best-effort; don't crash the load.
+            }
         }
 
 

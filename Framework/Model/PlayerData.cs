@@ -11,5 +11,6 @@
         public PositionData[] Position { get; init; }
 
         public bool IsCharacterSwimming { get; init; }
+        public DebrisData[] Debris { get; init; }
     }
 }
