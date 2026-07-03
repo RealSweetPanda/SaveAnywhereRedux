@@ -6,6 +6,7 @@ namespace SaveAnywhere.Framework.Model
         int Y,
         string QualifiedItemId,
         int Stack,
-        int Quality
+        int Quality,
+        bool IsResourcePile
     );
 }

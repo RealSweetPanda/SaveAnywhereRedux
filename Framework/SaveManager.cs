@@ -496,17 +496,39 @@ namespace SaveAnywhere.Framework
                     {
                         try
                         {
-                            if (d?.item == null) continue;
-                            if (d.debrisType.Value != Debris.DebrisType.OBJECT
-                                && d.debrisType.Value != Debris.DebrisType.ARCHAEOLOGY) continue;
+                            if (d == null) continue;
+
+                            // Resource piles (wood/stone/coal left over from chopping
+                            // a tree or mining a rock) never get a live `.item` —
+                            // InitializeResource/InitializeItem only set the raw
+                            // itemId string for those, since each chunk is collected
+                            // as a separate pickup (see collect() below). Regular
+                            // single-item drops (loot, quest items, tools/weapons,
+                            // forage) DO have a real `.item`. Filtering on "has a
+                            // resolvable id" (rather than a specific DebrisType)
+                            // naturally excludes purely decorative debris (splinters,
+                            // floating damage numbers, letters) which never get one.
+                            bool hasRealItem = d.item != null;
+                            var qualifiedId = hasRealItem ? d.item.QualifiedItemId : d.itemId.Value;
+                            if (string.IsNullOrEmpty(qualifiedId)) continue;
 
                             var chunk = d.Chunks.FirstOrDefault();
                             if (chunk == null) continue;
                             var tile = chunk.position.Value / 64f;
 
+                            // A real dropped item's own stack (the game creates one
+                            // Debris per item when dropping a stack, so this is
+                            // almost always 1), or — for a resource pile — how many
+                            // chunks are still waiting to be picked up. collect()
+                            // gives exactly 1 unit per chunk for resource piles
+                            // regardless of any stack value, which RestoreDebris
+                            // below accounts for via IsResourcePile.
+                            int amount = hasRealItem ? d.item.Stack : d.Chunks.Count;
+                            if (amount <= 0) amount = 1;
+
                             int quality = (d.item as StardewValley.Object)?.Quality ?? 0;
                             list.Add(new DebrisData(mapName, (int)tile.X, (int)tile.Y,
-                                d.item.QualifiedItemId, d.item.Stack, quality));
+                                qualifiedId, amount, quality, !hasRealItem));
                         }
                         catch (Exception ex)
                         {
@@ -557,15 +579,41 @@ namespace SaveAnywhere.Framework
                         continue;
                     }
 
-                    var item = ItemRegistry.Create(dd.QualifiedItemId, dd.Stack, dd.Quality, allowNull: true);
-                    if (item == null)
+                    var origin = new Vector2(dd.X * 64f + 32f, dd.Y * 64f + 32f);
+
+                    if (dd.IsResourcePile)
                     {
-                        log.Log($"[SA] Debris item '{dd.QualifiedItemId}' no longer exists; skipping", LogLevel.Trace);
-                        continue;
+                        // Resource piles give exactly 1 unit per chunk on pickup
+                        // (Debris.collect() ignores stack size when there's no live
+                        // `.item`), so recreate that many separate single-item
+                        // debris rather than one item with a big stack — otherwise
+                        // walking over the pile once would only give back 1 unit
+                        // and silently discard the rest.
+                        int placed = 0;
+                        for (int i = 0; i < dd.Stack; i++)
+                        {
+                            var piece = ItemRegistry.Create(dd.QualifiedItemId, 1, dd.Quality, allowNull: true);
+                            if (piece == null) break; // invalid/removed id; stop trying more
+                            location.debris.Add(new Debris(piece, origin));
+                            placed++;
+                        }
+                        if (placed == 0)
+                        {
+                            log.Log($"[SA] Debris item '{dd.QualifiedItemId}' no longer exists; skipping", LogLevel.Trace);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        var item = ItemRegistry.Create(dd.QualifiedItemId, dd.Stack, dd.Quality, allowNull: true);
+                        if (item == null)
+                        {
+                            log.Log($"[SA] Debris item '{dd.QualifiedItemId}' no longer exists; skipping", LogLevel.Trace);
+                            continue;
+                        }
+                        location.debris.Add(new Debris(item, origin));
                     }
 
-                    var origin = new Vector2(dd.X * 64f + 32f, dd.Y * 64f + 32f);
-                    location.debris.Add(new Debris(item, origin));
                     restored++;
                 }
                 catch (Exception ex)
