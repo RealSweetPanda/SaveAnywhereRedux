@@ -44,13 +44,14 @@ game), if you have GMCM use it instead.
   you to the nearest open tile using the same recovery the game uses for its own stale warp points.
 - **Dropped items no longer disappear on reload.** Something you just chopped, looted, or knocked loose that's
   still sitting on the ground used to vanish, because the game doesn't normally expect the ground to have anything
-  on it when a save happens. Single-item drops (loot, quest items, tools/weapons, unpicked forage) are now
-  preserved. Loose resource chunks from a tool swing (wood/stone/coal not yet walked over) aren't — just re-swing
-  the same node.
+  on it when a save happens. This covers both single-item drops (loot, quest items, tools/weapons, unpicked forage)
+  and loose resource piles (wood/stone/coal left over from chopping a tree or mining a rock), indoors or out.
 - **Fixed saving changing tomorrow's weather** (e.g. deleting rain, or corrupting the forecast when saving on a
   festival day).
 - **Fixed multiplayer hang:** mid-day saving with farmhands connected froze the game on the saving screen forever;
   the mod now blocks the save with a clear message instead.
+- Skipped the few-second "has been saved" animation for a mid-day save — that screen is vanilla's end-of-night
+  transition, and doesn't make sense when the clock isn't actually advancing to the next day.
 - Fixed a crash (`ArgumentException`) on the second mid-day save of a session in some cases.
 - Fixed a possible crash on load if the mid-day save data was missing or corrupted.
 - Farmhands connecting to a host no longer get warped to the host's saved position.
